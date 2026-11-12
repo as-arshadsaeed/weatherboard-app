@@ -7,6 +7,7 @@ import {
   formatForecastShortDate,
   formatLocalDate,
   formatLocalTime,
+  formatSavedAt,
 } from '@/utils/date'
 
 describe('date utilities', () => {
@@ -42,5 +43,22 @@ describe('date utilities', () => {
     expect(formatLocalClock(null)).toBeNull()
     expect(formatLocalClock('')).toBeNull()
     expect(formatLocalClock('sunrise')).toBeNull()
+  })
+
+  describe('formatSavedAt', () => {
+    const base = new Date('2026-11-12T18:00:00Z').getTime()
+
+    it('gives an absolute time for the viewer and a relative age', () => {
+      const saved = formatSavedAt(base - 3 * 3_600_000, base)
+      expect(saved.relative).toBe('about 3 hours ago')
+      expect(saved.absolute).toMatch(/Nov/)
+      expect(saved.absolute).toMatch(/\d{1,2}:\d{2}/)
+    })
+
+    it('describes very recent and older data sensibly', () => {
+      expect(formatSavedAt(base - 20_000, base).relative).toBe('less than a minute ago')
+      expect(formatSavedAt(base - 5 * 60_000, base).relative).toBe('5 minutes ago')
+      expect(formatSavedAt(base - 2 * 86_400_000, base).relative).toBe('2 days ago')
+    })
   })
 })

@@ -38,6 +38,7 @@ export type WeatherErrorKind =
   | 'rate-limited'
   | 'unavailable'
   | 'bad-response'
+  | 'offline'
 
 /** Messages are written for non-technical users (spec §4.3). */
 const MESSAGES: Record<WeatherErrorKind, string> = {
@@ -47,6 +48,8 @@ const MESSAGES: Record<WeatherErrorKind, string> = {
   'rate-limited': 'The weather service is busy right now. Please wait a moment and try again.',
   unavailable: 'The weather service is temporarily unavailable. Please try again shortly.',
   'bad-response': 'Weather data could not be read for this location. Please try again.',
+  offline:
+    'You’re offline, and no saved weather is available for this city. Connect to the internet to load it.',
 }
 
 export class WeatherApiError extends Error {

@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
+import { buildReport } from '@/test/fixtures/report'
+
 import {
   areValidCoordinates,
   formatCoordinates,
   isCity,
   isValidLatitude,
   isValidLongitude,
+  isWeatherReport,
   normalizeSearchQuery,
   parseCityFromSearch,
   sanitizeCities,
@@ -114,5 +117,38 @@ describe('isCity / sanitizeCities', () => {
   it('returns an empty list for non-arrays', () => {
     expect(sanitizeCities({ a: 1 }, 5)).toEqual([])
     expect(sanitizeCities(undefined, 5)).toEqual([])
+  })
+})
+
+describe('isWeatherReport', () => {
+  const valid = () => JSON.parse(JSON.stringify(buildReport(1_700_000_000_000)))
+
+  it('accepts a real report, including one with missing optional values', () => {
+    expect(isWeatherReport(valid())).toBe(true)
+    const sparse = valid()
+    sparse.current.humidityPercent = null
+    sparse.current.windSpeedKmh = null
+    sparse.daily[0].precipitationProbabilityPercent = null
+    sparse.daily[0].sunrise = null
+    expect(isWeatherReport(sparse)).toBe(true)
+  })
+
+  it.each([
+    ['null', () => null],
+    ['a string', () => 'report'],
+    ['no timezone', () => ({ ...valid(), timezone: undefined })],
+    ['no current', () => ({ ...valid(), current: undefined })],
+    ['null current', () => ({ ...valid(), current: null })],
+    ['four forecast days', () => ({ ...valid(), daily: valid().daily.slice(0, 4) })],
+    ['non-numeric temperature', () => { const r = valid(); r.current.temperatureC = '7'; return r }],
+    ['missing weather code', () => { const r = valid(); delete r.current.weatherCode; return r }],
+    ['non-boolean isDay', () => { const r = valid(); r.current.isDay = 1; return r }],
+    ['NaN humidity', () => { const r = valid(); r.current.humidityPercent = NaN; return r }],
+    ['a forecast day without a date', () => { const r = valid(); delete r.daily[2].date; return r }],
+    ['a forecast day with a non-numeric max', () => { const r = valid(); r.daily[1].maxTemperatureC = 'hot'; return r }],
+    ['a null forecast day', () => { const r = valid(); r.daily[3] = null; return r }],
+    ['no fetchedAt', () => ({ ...valid(), fetchedAt: undefined })],
+  ])('rejects %s', (_label, build) => {
+    expect(isWeatherReport(build())).toBe(false)
   })
 })

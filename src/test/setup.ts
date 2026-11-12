@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom/vitest'
+import 'fake-indexeddb/auto'
 import { cleanup } from '@testing-library/react'
+import { IDBFactory } from 'fake-indexeddb'
 import { afterEach } from 'vitest'
+
+import { resetWeatherCacheForTests } from '@/services/weatherCache'
 
 // jsdom implements <dialog> without showModal()/close(). This shim only toggles the `open`
 // attribute; focus trapping, Escape and inertness are verified against a real browser in Playwright.
@@ -17,6 +21,9 @@ if (typeof HTMLDialogElement !== 'undefined' && typeof HTMLDialogElement.prototy
 
 afterEach(() => {
   cleanup()
+  // A fresh in-memory IndexedDB per test so saved weather never leaks between tests.
+  resetWeatherCacheForTests()
+  globalThis.indexedDB = new IDBFactory()
   window.localStorage.clear()
   document.documentElement.classList.remove('dark')
 })
