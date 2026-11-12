@@ -18,7 +18,7 @@ export function UnitToggle({ unit, onChange }: UnitToggleProps) {
     <div
       role="group"
       aria-label="Temperature unit"
-      className="inline-flex items-center overflow-hidden rounded-lg border border-input bg-card shadow-xs"
+      className="inline-flex items-center rounded-lg border border-input bg-card shadow-xs"
     >
       {OPTIONS.map((option) => {
         const pressed = option.unit === unit
@@ -31,7 +31,8 @@ export function UnitToggle({ unit, onChange }: UnitToggleProps) {
             aria-label={option.accessibleName}
             onClick={() => onChange(option.unit)}
             className={cn(
-              'rounded-none text-sm font-semibold md:size-10',
+              // Corners are rounded per button (not clipped by the group) so the focus ring is never cut off.
+              'rounded-none text-sm font-semibold first:rounded-s-[calc(var(--radius)-1px)] last:rounded-e-[calc(var(--radius)-1px)] focus-visible:relative focus-visible:z-10 md:size-10',
               pressed
                 ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground'
                 : 'text-muted-foreground',

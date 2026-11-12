@@ -95,7 +95,7 @@ export default function App() {
         href="#main"
         // On a phone's Favourites view <main> is hidden, so make it the visible target first.
         onClick={() => setView('weather')}
-        className="sr-only z-50 rounded-lg bg-primary px-4 py-2 text-primary-foreground focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+        className="sr-only z-50 rounded-lg bg-primary text-primary-foreground focus:not-sr-only focus:px-4 focus:py-2 focus:fixed focus:top-3 focus:left-3 focus:inline-flex focus:min-h-11 focus:items-center"
       >
         Skip to main content
       </a>

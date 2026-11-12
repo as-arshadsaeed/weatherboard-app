@@ -49,7 +49,7 @@ export function MobileNavigation({ view, onChange, favouriteCount, onOpenSetting
                   showCount ? `${label}, ${favouriteCount} of ${MAX_FAVOURITES} saved` : undefined
                 }
                 className={cn(
-                  'relative flex min-h-14 w-full flex-col items-center justify-center gap-0.5 px-2 text-xs transition-colors',
+                  'relative flex min-h-14 w-full flex-col items-center justify-center gap-0.5 px-2 text-xs transition-colors focus-visible:outline-offset-[-4px]',
                   active ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground',
                 )}
               >
@@ -80,7 +80,7 @@ export function MobileNavigation({ view, onChange, favouriteCount, onOpenSetting
             type="button"
             onClick={onOpenSettings}
             aria-haspopup="dialog"
-            className="flex min-h-14 w-full flex-col items-center justify-center gap-0.5 px-2 text-xs font-medium text-muted-foreground transition-colors"
+            className="flex min-h-14 w-full flex-col items-center justify-center gap-0.5 px-2 text-xs font-medium text-muted-foreground transition-colors focus-visible:outline-offset-[-4px]"
           >
             <Settings className="size-5" aria-hidden="true" />
             <span>Settings</span>
