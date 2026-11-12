@@ -140,7 +140,7 @@ test.describe('permission flow', () => {
     await stubPermission(page, { initial: 'default', answer: 'granted' })
     await mockApis(page)
     await page.goto(LONDON_URL)
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     expect(await promptCount(page)).toBe(0) // page load
 
     await openSettings(page)
@@ -166,7 +166,7 @@ test.describe('permission flow', () => {
     await stubPermission(page, { initial: 'default', answer: 'denied' })
     await mockApis(page)
     await page.goto(LONDON_URL)
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     await openSettings(page)
     await reminderSwitch(page).click()
     await dialog(page).getByRole('button', { name: 'Allow notifications' }).click()
@@ -179,7 +179,7 @@ test.describe('permission flow', () => {
     expect((await storedReminder(page)).enabled).toBe(true)
 
     await closeSettings(page)
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible() // dashboard still fine
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible() // dashboard still fine
     await expect(page.getByRole('combobox', { name: 'Search for a city' })).toBeEnabled()
     expect(errors).toEqual([])
   })
@@ -365,7 +365,7 @@ test.describe('a reminder fires while the app is open', () => {
     await stubPermission(page, { initial: 'denied', answer: 'denied' })
     await mockApis(page)
     await page.goto(LONDON_URL)
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
   }
 
   test('shows the selected city’s weather in the selected unit at the chosen time — once a day', async ({ page }) => {
@@ -413,7 +413,7 @@ test.describe('a reminder fires while the app is open', () => {
     await page.clock.fastForward('03:00')
     await expect(dailyBanner(page)).toBeVisible()
     await page.reload()
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     await page.clock.fastForward('01:00')
     await expect(dailyBanner(page)).toHaveCount(0)
   })
@@ -501,7 +501,7 @@ test.describe('system notifications (real service worker registration)', () => {
     await seed(page, 'reminder', { enabled: true, time: '08:00', lastFiredOn: null })
     await mockApis(page)
     await page.goto(LONDON_URL)
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     await waitForServiceWorkerControl(page)
   }
   const workerCalls = (page: Page) =>

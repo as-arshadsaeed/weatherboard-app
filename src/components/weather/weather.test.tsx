@@ -25,7 +25,7 @@ describe('CurrentWeather', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'London' })).toBeVisible()
     expect(screen.getByText('England, United Kingdom')).toBeVisible()
-    expect(screen.getByLabelText('7 degrees Celsius')).toBeVisible()
+    expect(screen.getByText('7 degrees Celsius')).toBeVisible()
     expect(screen.getByText('Partly cloudy')).toBeVisible()
     expect(screen.getByText('local time')).toBeVisible()
 
@@ -36,12 +36,12 @@ describe('CurrentWeather', () => {
 
   it('exposes full units to assistive technology', () => {
     render(<CurrentWeather city={london} report={report} unit="celsius" />)
-    expect(screen.getByLabelText('3°C')).toBeInTheDocument()
+    expect(screen.getByText('3°C')).toBeInTheDocument()
   })
 
   it('renders in Fahrenheit consistently without mixing units', () => {
     render(<CurrentWeather city={london} report={report} unit="fahrenheit" />)
-    expect(screen.getByLabelText('44 degrees Fahrenheit')).toBeVisible()
+    expect(screen.getByText('44 degrees Fahrenheit')).toBeVisible()
     expect(screen.queryByLabelText(/Celsius/)).toBeNull()
   })
 
@@ -64,27 +64,27 @@ describe('FiveDayForecast', () => {
     render(<FiveDayForecast days={report.daily} unit="celsius" />)
     const rainy = screen.getByRole('listitem', { name: 'Saturday 14 November' })
     expect(within(rainy).getByText('Light rain')).toBeVisible()
-    expect(within(rainy).getByLabelText('High 9°C, low 0°C')).toBeInTheDocument()
-    expect(within(rainy).getByLabelText('82 percent chance of precipitation')).toBeInTheDocument()
+    expect(within(rainy).getByText('High 9°C, low 0°C')).toBeInTheDocument()
+    expect(within(rainy).getByText('82 percent chance of precipitation')).toBeInTheDocument()
   })
 
   it('says so when precipitation chance is unavailable instead of showing 0%', () => {
     render(<FiveDayForecast days={report.daily} unit="celsius" />)
     const last = screen.getByRole('listitem', { name: 'Monday 16 November' })
-    expect(within(last).getByLabelText('Chance of precipitation not available')).toBeInTheDocument()
+    expect(within(last).getByText('Chance of precipitation not available')).toBeInTheDocument()
     expect(within(last).queryByText('0%')).toBeNull()
   })
 
   it('shows sub-zero lows without a negative-zero artefact', () => {
     render(<FiveDayForecast days={report.daily} unit="celsius" />)
     const last = screen.getByRole('listitem', { name: 'Monday 16 November' })
-    expect(within(last).getByLabelText('High 9°C, low 0°C')).toBeInTheDocument()
+    expect(within(last).getByText('High 9°C, low 0°C')).toBeInTheDocument()
   })
 
   it('converts every card when the unit changes', () => {
     render(<FiveDayForecast days={report.daily} unit="fahrenheit" />)
     const first = screen.getByRole('listitem', { name: 'Today, Thursday 12 November' })
-    expect(within(first).getByLabelText('High 47°F, low 40°F')).toBeInTheDocument()
+    expect(within(first).getByText('High 47°F, low 40°F')).toBeInTheDocument()
   })
 })
 
@@ -110,7 +110,7 @@ describe('WeatherDashboard', () => {
     fetchMock.mockResolvedValue(jsonResponse(buildForecastResponse()))
     render(<WeatherDashboard city={london} unit="celsius" />)
 
-    expect(await screen.findByLabelText('7 degrees Celsius')).toBeVisible()
+    expect(await screen.findByText('7 degrees Celsius')).toBeVisible()
     expect(screen.getAllByRole('listitem')).toHaveLength(5)
     expect(screen.getByText(/Weather data by/)).toHaveTextContent('Weather data by Open-Meteo.com')
     expect(screen.getByRole('link', { name: 'Open-Meteo.com' })).toHaveAttribute(
@@ -132,7 +132,7 @@ describe('WeatherDashboard', () => {
 
     fetchMock.mockResolvedValue(jsonResponse(buildForecastResponse()))
     await user.click(screen.getByRole('button', { name: 'Try again' }))
-    expect(await screen.findByLabelText('7 degrees Celsius')).toBeVisible()
+    expect(await screen.findByText('7 degrees Celsius')).toBeVisible()
   })
 
   it('shows no retry button when the location itself is invalid', async () => {
@@ -160,10 +160,10 @@ describe('WeatherDashboard', () => {
   it('does not refetch when only the unit changes', async () => {
     fetchMock.mockResolvedValue(jsonResponse(buildForecastResponse()))
     const { rerender } = render(<WeatherDashboard city={london} unit="celsius" />)
-    await screen.findByLabelText('7 degrees Celsius')
+    await screen.findByText('7 degrees Celsius')
 
     rerender(<WeatherDashboard city={london} unit="fahrenheit" />)
-    expect(screen.getByLabelText('44 degrees Fahrenheit')).toBeVisible()
+    expect(screen.getByText('44 degrees Fahrenheit')).toBeVisible()
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })

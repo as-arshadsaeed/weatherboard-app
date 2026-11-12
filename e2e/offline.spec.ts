@@ -115,7 +115,7 @@ test.describe('viewing weather saves it, and it is available offline', () => {
 
     await expect(offlineBanner(page)).toBeVisible()
     await expect(offlineBanner(page)).toContainText('Weather you’ve viewed before is still available; other cities need a connection.')
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     await expect(page.getByRole('heading', { level: 1, name: 'London' })).toBeVisible()
 
     const notice = savedNotice(page)
@@ -142,7 +142,7 @@ test.describe('viewing weather saves it, and it is available offline', () => {
     await goOffline(context)
     for (let i = 0; i < 3; i++) {
       await page.reload()
-      await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+      await expect(page.getByText('7 degrees Celsius')).toBeVisible()
       await expect(savedNotice(page)).toBeVisible()
     }
   })
@@ -153,7 +153,7 @@ test.describe('viewing weather saves it, and it is available offline', () => {
     await goOffline(context)
     await page.reload()
     await page.getByRole('button', { name: 'Fahrenheit (°F)' }).click()
-    await expect(page.getByLabel('44 degrees Fahrenheit')).toBeVisible()
+    await expect(page.getByText('44 degrees Fahrenheit')).toBeVisible()
   })
 
   test('when the connection returns, fresh data replaces the saved data and what is saved is updated', async ({ page, context }) => {
@@ -169,7 +169,7 @@ test.describe('viewing weather saves it, and it is available offline', () => {
     forecast.temp = 12.4 // the weather changed while we were away
     await context.setOffline(false)
 
-    await expect(page.getByLabel('12 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('12 degrees Celsius')).toBeVisible()
     await expect(savedNotice(page)).toHaveCount(0)
     await expect(page.getByText('You’re back online.')).toBeVisible()
     await expect.poll(async () => (await savedSnapshots(page))[0]!.report.current.temperatureC).toBe(12.4)
@@ -183,7 +183,7 @@ test.describe('viewing weather saves it, and it is available offline', () => {
     await expect(savedNotice(page)).toHaveCount(0) // live right now
     await goOffline(context)
     await expect(savedNotice(page)).toContainText('You’re offline. Showing saved weather.')
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible() // kept on screen, now honestly labelled
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible() // kept on screen, now honestly labelled
   })
 })
 
@@ -194,7 +194,7 @@ test.describe('honesty about what is not available offline', () => {
     await viewLondonAndSave(page)
     await goOffline(context)
     await page.reload()
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible() // London is saved
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible() // London is saved
 
     const tokyo = panel(page).getByRole('button', { name: /^Tokyo/ })
     await tokyo.click()
@@ -202,13 +202,13 @@ test.describe('honesty about what is not available offline', () => {
       'You’re offline, and no saved weather is available for this city. Connect to the internet to load it.',
     )
     await expect(page.getByRole('heading', { level: 1, name: /Tokyo/ })).toBeVisible()
-    await expect(page.getByLabel(/degrees/)).toHaveCount(0) // nothing invented
+    await expect(page.getByText(/degrees/)).toHaveCount(0) // nothing invented
     await expect(savedNotice(page)).toHaveCount(0)
     expect((await savedSnapshots(page)).map((s) => s.city.name)).toEqual(['London'])
 
     // …and once the connection returns it loads by itself.
     await context.setOffline(false)
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     await expect.poll(async () => (await savedSnapshots(page)).map((s) => s.city.name).sort()).toEqual(['London', 'Tokyo'])
   })
 
@@ -238,7 +238,7 @@ test.describe('honesty about what is not available offline', () => {
     await goOffline(context)
     await page.reload()
     await expect(page.getByRole('alert')).toContainText('no saved weather is available for this city')
-    await expect(page.getByLabel(/degrees/)).toHaveCount(0)
+    await expect(page.getByText(/degrees/)).toHaveCount(0)
     await expect.poll(async () => (await savedSnapshots(page)).length).toBe(0)
   })
 
@@ -264,7 +264,7 @@ test.describe('honesty about what is not available offline', () => {
     await mockApis(page)
     await page.goto('/')
     await search(page, 'lon', /London/)
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     await waitForServiceWorkerControl(page)
 
     await goOffline(context)
@@ -285,13 +285,13 @@ test.describe('browser says online, but the weather service cannot be reached', 
     await page.reload()
     const notice = savedNotice(page)
     await expect(notice).toContainText('Can’t reach the weather service. Showing saved weather.')
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     await expect(page.getByText('You’re offline.')).toHaveCount(0) // not offline: do not say so
 
     forecast.mode = 'ok'
     forecast.temp = 9.2
     await notice.getByRole('button', { name: 'Try again' }).click()
-    await expect(page.getByLabel('9 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('9 degrees Celsius')).toBeVisible()
     await expect(savedNotice(page)).toHaveCount(0)
   })
 })
@@ -363,7 +363,7 @@ for (const vp of [
       await goOffline(context)
       await page.reload()
       await expect(offlineBanner(page)).toBeVisible()
-      await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+      await expect(page.getByText('7 degrees Celsius')).toBeVisible()
 
       const box = async (locator: ReturnType<Page['locator']>) => (await locator.boundingBox())!
       const banner = await box(offlineBanner(page))

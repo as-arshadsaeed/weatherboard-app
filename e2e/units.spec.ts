@@ -20,31 +20,31 @@ test.describe('temperature unit', () => {
     await page.goto(LONDON_URL)
 
     await expect(celsius(page)).toHaveAttribute('aria-pressed', 'true')
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
 
     await fahrenheit(page).click()
     await expect(fahrenheit(page)).toHaveAttribute('aria-pressed', 'true')
     await expect(celsius(page)).toHaveAttribute('aria-pressed', 'false')
 
     // 6.7°C → 44°F (current), feels like 2.9 → 37, high 8.4 → 47, low 4.7 → 40
-    await expect(page.getByLabel('44 degrees Fahrenheit')).toBeVisible()
-    await expect(page.getByLabel('37°F', { exact: true })).toBeVisible()
-    await expect(page.getByLabel('47°F', { exact: true })).toBeVisible()
-    await expect(page.getByLabel('40°F', { exact: true })).toBeVisible()
+    await expect(page.getByText('44 degrees Fahrenheit')).toBeVisible()
+    await expect(page.getByText('37°F', { exact: true })).toBeVisible()
+    await expect(page.getByText('47°F', { exact: true })).toBeVisible()
+    await expect(page.getByText('40°F', { exact: true })).toBeVisible()
     // Forecast: Saturday 9.3°C / 0.1°C → 49°F / 32°F
     await expect(page.getByRole('listitem', { name: 'Saturday 14 November' })).toContainText('49°')
-    await expect(page.getByLabel('High 49°F, low 32°F')).toBeVisible()
+    await expect(page.getByText('High 49°F, low 32°F')).toBeVisible()
     // Never mixed: no Celsius left in the weather content.
-    await expect(page.locator('main').getByLabel(/Celsius|\d°C/)).toHaveCount(0)
+    await expect(page.locator('main').getByText(/Celsius|\d°C/)).toHaveCount(0)
 
     await celsius(page).click()
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
   })
 
   test('is remembered after a reload and never refetches the weather', async ({ page }) => {
     const requests = await mockWeather(page)
     await page.goto(LONDON_URL)
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
 
     await fahrenheit(page).click()
     await celsius(page).click()
@@ -53,7 +53,7 @@ test.describe('temperature unit', () => {
     expect(await page.evaluate(() => localStorage.getItem('weatherboard:unit'))).toBe('"fahrenheit"')
 
     await page.reload()
-    await expect(page.getByLabel('44 degrees Fahrenheit')).toBeVisible()
+    await expect(page.getByText('44 degrees Fahrenheit')).toBeVisible()
     await expect(fahrenheit(page)).toHaveAttribute('aria-pressed', 'true')
   })
 
@@ -63,7 +63,7 @@ test.describe('temperature unit', () => {
     await page.addInitScript(() => localStorage.setItem('weatherboard:unit', '"kelvin"'))
     await mockWeather(page)
     await page.goto(LONDON_URL)
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     await expect(celsius(page)).toHaveAttribute('aria-pressed', 'true')
     expect(errors).toEqual([])
   })
@@ -82,7 +82,7 @@ test.describe('temperature unit', () => {
     await mockWeather(page)
     await page.goto(LONDON_URL)
     await fahrenheit(page).click()
-    await expect(page.getByLabel('44 degrees Fahrenheit')).toBeVisible()
+    await expect(page.getByText('44 degrees Fahrenheit')).toBeVisible()
     expect(errors).toEqual([])
   })
 
@@ -91,10 +91,10 @@ test.describe('temperature unit', () => {
     await page.goto(LONDON_URL)
     await fahrenheit(page).focus()
     await page.keyboard.press('Space')
-    await expect(page.getByLabel('44 degrees Fahrenheit')).toBeVisible()
+    await expect(page.getByText('44 degrees Fahrenheit')).toBeVisible()
     await celsius(page).focus()
     await page.keyboard.press('Enter')
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
   })
 
   for (const vp of [

@@ -39,10 +39,8 @@ export function ForecastCard({ day, index, unit }: ForecastCardProps) {
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-1 lg:items-center">
-        <p
-          className="tabular flex items-baseline gap-1.5"
-          aria-label={`High ${formatTemperature(day.maxTemperatureC, unit)}, low ${formatTemperature(day.minTemperatureC, unit)}`}
-        >
+        <p className="tabular flex items-baseline gap-1.5">
+          <span className="sr-only">{`High ${formatTemperature(day.maxTemperatureC, unit)}, low ${formatTemperature(day.minTemperatureC, unit)}`}</span>
           <span aria-hidden="true" className="text-lg font-semibold">
             {formatDegrees(day.maxTemperatureC, unit)}
           </span>
@@ -50,10 +48,8 @@ export function ForecastCard({ day, index, unit }: ForecastCardProps) {
             {formatDegrees(day.minTemperatureC, unit)}
           </span>
         </p>
-        <p
-          className="tabular flex items-center gap-1 text-xs text-muted-foreground"
-          aria-label={precipitationLabel}
-        >
+        <p className="tabular flex items-center gap-1 text-xs text-muted-foreground">
+          <span className="sr-only">{precipitationLabel}</span>
           <Droplets className="size-3.5" aria-hidden="true" />
           <span aria-hidden="true">{precipitation === null ? '–' : `${Math.round(precipitation)}%`}</span>
         </p>

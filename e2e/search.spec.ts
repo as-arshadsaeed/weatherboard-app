@@ -77,7 +77,7 @@ test.describe('GeoDB autocomplete', () => {
     expect(geoDb[0]!.url.searchParams.get('limit')).toBe('6')
 
     await options.nth(2).click() // Londrina
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     await expect(page.getByRole('heading', { level: 1, name: 'Londrina' })).toBeVisible()
     await expect(page.getByText('Paraná, Brazil')).toBeVisible()
     const forecast = new URL(forecasts.at(-1)!)
@@ -182,7 +182,7 @@ test.describe('Open-Meteo geocoding fallback', () => {
       expect(fallback[0]!.searchParams.get('name')).toBe('lon')
 
       await page.getByRole('option').first().click()
-      await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+      await expect(page.getByText('7 degrees Celsius')).toBeVisible()
       // The fallback supplies the city's timezone, which is passed on to the weather request.
       expect(new URL(forecasts.at(-1)!).searchParams.get('timezone')).toBe('Europe/London')
     })
@@ -321,7 +321,7 @@ for (const vp of [
       if (process.env.SCREENSHOT_DIR) {
         await page.screenshot({ path: `${process.env.SCREENSHOT_DIR}/search-${vp.name}-open.png` })
         await page.getByRole('option').first().click()
-        await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+        await expect(page.getByText('7 degrees Celsius')).toBeVisible()
         await page.screenshot({ path: `${process.env.SCREENSHOT_DIR}/search-${vp.name}-selected.png` })
       }
       expect(errors, testInfo.title).toEqual([])
@@ -335,7 +335,7 @@ test('weather requests are not repeated when only the theme changes after search
   await page.goto('/')
   await searchBox(page).fill('lon')
   await page.getByRole('option').first().click()
-  await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+  await expect(page.getByText('7 degrees Celsius')).toBeVisible()
   await page.getByRole('button', { name: /switch to dark/i }).click()
   expect(forecasts).toHaveLength(1)
 })

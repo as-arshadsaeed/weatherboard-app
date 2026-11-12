@@ -45,7 +45,7 @@ describe('dashboard shell', () => {
     render(<App />)
     const panel = screen.getByRole('region', { name: 'Favourites' })
     expect(within(panel).getByText('No favourites yet')).toBeVisible()
-    expect(within(panel).getByLabelText('0 of 5 favourites saved')).toBeVisible()
+    expect(within(panel).getByText('0 of 5 favourites saved')).toBeVisible()
   })
 
   it('renders an enabled, labelled city search combobox', () => {
@@ -72,7 +72,7 @@ describe('dashboard shell', () => {
     window.history.replaceState({}, '', '/?lat=51.5&lon=-0.12&name=London&country=United%20Kingdom')
 
     render(<App />)
-    expect(await screen.findByLabelText('7 degrees Celsius')).toBeVisible()
+    expect(await screen.findByText('7 degrees Celsius')).toBeVisible()
     expect(screen.getByRole('heading', { level: 1, name: 'London' })).toBeVisible()
     expect(screen.queryByText('No city selected')).toBeNull()
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain('latitude=51.5')
@@ -85,7 +85,7 @@ describe('dashboard shell', () => {
     window.history.replaceState({}, '', '/?lat=51.5&lon=-0.12&name=London')
 
     render(<App />)
-    await screen.findByLabelText('7 degrees Celsius')
+    await screen.findByText('7 degrees Celsius')
     await user.click(screen.getByRole('button', { name: 'Switch to dark theme' }))
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
@@ -123,7 +123,7 @@ describe('dashboard shell', () => {
       await user.type(screen.getByRole('combobox', { name: 'Search for a city' }), 'tok')
       await user.click(await screen.findByRole('option', { name: /Tokyo/ }))
 
-      expect(await screen.findByLabelText('7 degrees Celsius')).toBeVisible()
+      expect(await screen.findByText('7 degrees Celsius')).toBeVisible()
       expect(screen.getByRole('heading', { level: 1, name: 'Tokyo' })).toBeVisible()
       expect(screen.queryByText('No city selected')).toBeNull()
 
@@ -140,7 +140,7 @@ describe('dashboard shell', () => {
       stubNetwork()
       window.history.replaceState({}, '', '/?lat=51.5&lon=-0.12&name=London')
       render(<App />)
-      await screen.findByLabelText('7 degrees Celsius')
+      await screen.findByText('7 degrees Celsius')
       expect(screen.getByRole('heading', { level: 1, name: 'London' })).toBeVisible()
 
       await user.type(screen.getByRole('combobox', { name: 'Search for a city' }), 'tok')
@@ -167,17 +167,17 @@ describe('dashboard shell', () => {
       open()
       render(<App />)
 
-      expect(await screen.findByLabelText('7 degrees Celsius')).toBeVisible()
+      expect(await screen.findByText('7 degrees Celsius')).toBeVisible()
       await user.click(screen.getByRole('button', { name: 'Fahrenheit (°F)' }))
 
-      expect(screen.getByLabelText('44 degrees Fahrenheit')).toBeVisible() // 6.7°C
-      expect(screen.getByLabelText('37°F')).toBeInTheDocument() // feels like 2.9°C
-      expect(screen.getByLabelText('47°F')).toBeInTheDocument() // high 8.4°C
-      expect(screen.getByLabelText('40°F')).toBeInTheDocument() // low 4.7°C
+      expect(screen.getByText('44 degrees Fahrenheit')).toBeVisible() // 6.7°C
+      expect(screen.getByText('37°F')).toBeInTheDocument() // feels like 2.9°C
+      expect(screen.getByText('47°F')).toBeInTheDocument() // high 8.4°C
+      expect(screen.getByText('40°F')).toBeInTheDocument() // low 4.7°C
       expect(screen.getByRole('listitem', { name: 'Saturday 14 November' })).toBeVisible()
-      expect(screen.getByLabelText('High 49°F, low 32°F')).toBeInTheDocument() // 9.3°C / 0.1°C
+      expect(screen.getByText('High 49°F, low 32°F')).toBeInTheDocument() // 9.3°C / 0.1°C
       // Nothing is left in Celsius, so units are never mixed.
-      expect(within(screen.getByRole('main')).queryByLabelText(/Celsius|\d°C/)).toBeNull()
+      expect(within(screen.getByRole('main')).queryByText(/Celsius|\d°C/)).toBeNull()
     })
 
     it('does not refetch weather when the unit changes', async () => {
@@ -185,7 +185,7 @@ describe('dashboard shell', () => {
       const fetchMock = stubForecast()
       open()
       render(<App />)
-      await screen.findByLabelText('7 degrees Celsius')
+      await screen.findByText('7 degrees Celsius')
 
       await user.click(screen.getByRole('button', { name: 'Fahrenheit (°F)' }))
       await user.click(screen.getByRole('button', { name: 'Celsius (°C)' }))
@@ -197,12 +197,12 @@ describe('dashboard shell', () => {
       stubForecast()
       open()
       const first = render(<App />)
-      await screen.findByLabelText('7 degrees Celsius')
+      await screen.findByText('7 degrees Celsius')
       await user.click(screen.getByRole('button', { name: 'Fahrenheit (°F)' }))
       first.unmount()
 
       render(<App />)
-      expect(await screen.findByLabelText('44 degrees Fahrenheit')).toBeVisible()
+      expect(await screen.findByText('44 degrees Fahrenheit')).toBeVisible()
       expect(screen.getByRole('button', { name: 'Fahrenheit (°F)' })).toHaveAttribute('aria-pressed', 'true')
     })
   })
@@ -241,7 +241,7 @@ describe('dashboard shell', () => {
 
       expect(screen.getByRole('main')).not.toHaveClass('hidden')
       expect(screen.getByRole('button', { name: /^Favourites/ })).not.toHaveAttribute('aria-current')
-      expect(await screen.findByLabelText('7 degrees Celsius')).toBeVisible()
+      expect(await screen.findByText('7 degrees Celsius')).toBeVisible()
     })
 
     it('the skip link makes the weather view visible first', async () => {

@@ -326,7 +326,7 @@ test.describe('service worker updates', () => {
 
     await context.setOffline(true)
     await page.reload()
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     await expect(page.getByRole('status', { name: 'Saved weather' })).toContainText('Showing saved weather')
   })
 })

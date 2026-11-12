@@ -38,19 +38,19 @@ describe('WeatherDetails', () => {
 
   it('expands abbreviations for assistive technology', () => {
     render(<WeatherDetails report={reportWith()} />)
-    expect(within(card('Humidity')).getByLabelText('64 percent')).toBeInTheDocument()
-    expect(within(card('Wind speed')).getByLabelText('12 kilometres per hour')).toBeInTheDocument()
+    expect(within(card('Humidity')).getByText('64 percent')).toBeInTheDocument()
+    expect(within(card('Wind speed')).getByText('12 kilometres per hour')).toBeInTheDocument()
     expect(
-      within(card('Wind direction')).getByLabelText('From the north, 358 degrees'),
+      within(card('Wind direction')).getByText('From the north, 358 degrees'),
     ).toBeInTheDocument()
-    expect(within(card('Precipitation')).getByLabelText('0 percent chance')).toBeInTheDocument()
+    expect(within(card('Precipitation')).getByText('0 percent chance')).toBeInTheDocument()
   })
 
   it('names a diagonal wind direction correctly', () => {
     render(<WeatherDetails report={reportWith((b) => (b.current.wind_direction_10m = 315))} />)
     expect(card('Wind direction')).toHaveTextContent('From NW')
     expect(
-      within(card('Wind direction')).getByLabelText('From the north-west, 315 degrees'),
+      within(card('Wind direction')).getByText('From the north-west, 315 degrees'),
     ).toBeInTheDocument()
   })
 
@@ -99,7 +99,7 @@ describe('CurrentWeather with missing values', () => {
     render(<CurrentWeather city={city} report={report} unit="celsius" />)
     expect(card('Feels like')).toHaveTextContent('Not available')
     expect(card('High')).toHaveTextContent('8°')
-    expect(screen.getByLabelText('7 degrees Celsius')).toBeVisible()
+    expect(screen.getByText('7 degrees Celsius')).toBeVisible()
   })
 
   it('renders an action slot (used for the favourite button)', () => {

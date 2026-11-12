@@ -34,16 +34,16 @@ test.describe('adding, switching and persisting', () => {
     await page.getByRole('button', { name: 'Add to favourites' }).click()
     await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible()
     await expect(panel(page).getByRole('button', { name: /^London/ })).toBeVisible()
-    await expect(panel(page).getByLabel('1 of 5 favourites saved')).toBeVisible()
+    await expect(panel(page).getByText('1 of 5 favourites saved')).toBeVisible()
 
     await search(page, 'par', /Paris/)
     await page.getByRole('button', { name: 'Add to favourites' }).click()
-    await expect(panel(page).getByLabel('2 of 5 favourites saved')).toBeVisible()
+    await expect(panel(page).getByText('2 of 5 favourites saved')).toBeVisible()
 
     await page.reload()
     await expect(panel(page).getByRole('listitem')).toHaveCount(2)
     await expect(page.getByRole('heading', { level: 1, name: 'Paris' })).toBeVisible() // last selected city restored
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible()
     expect(forecasts.length).toBeGreaterThanOrEqual(3)
     expect(errors).toEqual([])
@@ -56,7 +56,7 @@ test.describe('adding, switching and persisting', () => {
     await expect(page.getByText('No city selected')).toBeVisible()
 
     await panel(page).getByRole('button', { name: /^Tokyo/ }).click()
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     await expect(page.getByRole('heading', { level: 1, name: 'Tokyo' })).toBeVisible()
     const url = new URL(forecasts.at(-1)!)
     expect(url.searchParams.get('latitude')).toBe('35.6895')
@@ -210,7 +210,7 @@ test.describe('removing a favourite: the confirmation dialog in a real browser',
 
   test('removing from the weather card’s Saved button asks first and returns focus to it', async ({ page }) => {
     await panel(page).getByRole('button', { name: /^Paris/ }).click()
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     await page.getByRole('button', { name: 'Saved', exact: true }).click()
     await expect(page.getByRole('alertdialog', { name: 'Remove Paris from favourites?' })).toBeVisible()
     await page.getByRole('button', { name: 'Remove', exact: true }).click()
@@ -244,7 +244,7 @@ test.describe('when localStorage is blocked', () => {
     await page.getByRole('button', { name: 'Add to favourites' }).click()
     await expect(panel(page).getByRole('button', { name: /^London/ })).toBeVisible()
     await page.getByRole('button', { name: 'Fahrenheit (°F)' }).click()
-    await expect(page.getByLabel('44 degrees Fahrenheit')).toBeVisible()
+    await expect(page.getByText('44 degrees Fahrenheit')).toBeVisible()
 
     await page.reload()
     await expect(panel(page).getByText('No favourites yet')).toBeVisible()
@@ -292,7 +292,7 @@ for (const vp of [
         }
         await openFavourites()
         await panel(page).getByRole('button', { name: /^Tokyo/ }).click()
-        await expect(page.getByLabel('7 degrees Celsius')).toBeVisible() // chosen city → weather view
+        await expect(page.getByText('7 degrees Celsius')).toBeVisible() // chosen city → weather view
 
         const noOverflow = async () => {
           const { sw, cw } = await page.evaluate(() => ({

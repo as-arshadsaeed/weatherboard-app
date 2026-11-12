@@ -19,7 +19,8 @@ describe('FavouriteCities', () => {
   it('shows the empty state and a 0 / 5 count', () => {
     render(<FavouriteCities favourites={[]} selectedCity={null} onSelect={() => {}} onRequestRemove={() => {}} />)
     expect(screen.getByText('No favourites yet')).toBeVisible()
-    expect(screen.getByLabelText('0 of 5 favourites saved')).toHaveTextContent('0 / 5')
+    expect(screen.getByText('0 of 5 favourites saved')).toBeInTheDocument() // spoken form
+    expect(screen.getByText('0 / 5')).toBeVisible() // visual form
     expect(screen.queryByRole('list')).toBeNull()
   })
 
@@ -29,7 +30,7 @@ describe('FavouriteCities', () => {
     expect(items).toHaveLength(3)
     expect(items[0]).toHaveTextContent('London')
     expect(items[0]).toHaveTextContent('England, United Kingdom')
-    expect(screen.getByLabelText('3 of 5 favourites saved')).toBeVisible()
+    expect(screen.getByText('3 of 5 favourites saved')).toBeVisible()
     expect(screen.queryByText('No favourites yet')).toBeNull()
   })
 

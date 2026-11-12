@@ -6,6 +6,7 @@ import { useNow } from '@/hooks/useNow'
 import type { City } from '@/types/city'
 import type { TemperatureUnit, WeatherReport } from '@/types/weather'
 import { formatLocation } from '@/utils/city'
+import { Spoken } from '@/components/ui/spoken'
 import { UNAVAILABLE_TEXT } from '@/utils/constants'
 import { formatLocalDate, formatLocalTime } from '@/utils/date'
 import { formatDegrees, formatTemperature, roundTemperature, temperatureUnitLetter } from '@/utils/temperature'
@@ -40,8 +41,8 @@ function Stat({
       {value === null ? (
         <dd className="text-sm font-medium text-muted-foreground">{UNAVAILABLE_TEXT}</dd>
       ) : (
-        <dd className="tabular text-lg font-semibold tracking-tight" aria-label={accessibleValue}>
-          {value}
+        <dd className="tabular text-lg font-semibold tracking-tight">
+          <Spoken spoken={accessibleValue}>{value}</Spoken>
         </dd>
       )}
     </div>
@@ -96,17 +97,16 @@ export function CurrentWeather({ city, report, unit, action }: CurrentWeatherPro
           className="sm:hidden"
         />
         <div>
-          <p
-            className="tabular flex items-start text-7xl leading-none font-semibold tracking-tighter md:text-8xl"
-            aria-label={`${roundTemperature(current.temperatureC, unit)} degrees ${unit === 'celsius' ? 'Celsius' : 'Fahrenheit'}`}
-          >
-            <span aria-hidden="true">{roundTemperature(current.temperatureC, unit)}</span>
-            <span
-              aria-hidden="true"
-              className="mt-1 ml-1 text-3xl font-medium tracking-normal text-muted-foreground md:mt-2 md:text-4xl"
+          <p className="tabular text-7xl leading-none font-semibold tracking-tighter md:text-8xl">
+            <Spoken
+              spoken={`${roundTemperature(current.temperatureC, unit)} degrees ${unit === 'celsius' ? 'Celsius' : 'Fahrenheit'}`}
+              visualClassName="flex items-start"
             >
-              °{letter}
-            </span>
+              <span>{roundTemperature(current.temperatureC, unit)}</span>
+              <span className="mt-1 ml-1 text-3xl font-medium tracking-normal text-muted-foreground md:mt-2 md:text-4xl">
+                °{letter}
+              </span>
+            </Spoken>
           </p>
           <p className="mt-3 text-lg font-medium">{condition.label}</p>
         </div>

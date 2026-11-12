@@ -38,11 +38,11 @@ export function FavouriteCities({
         >
           Favourites
         </h2>
-        <span
-          className="tabular rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
-          aria-label={`${count} of ${MAX_FAVOURITES} favourites saved`}
-        >
-          {count} / {MAX_FAVOURITES}
+        <span className="tabular rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+          <span className="sr-only">{`${count} of ${MAX_FAVOURITES} favourites saved`}</span>
+          <span aria-hidden="true">
+            {count} / {MAX_FAVOURITES}
+          </span>
         </span>
       </div>
 
