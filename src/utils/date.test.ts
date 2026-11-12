@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  formatClockFromIso,
+  formatLocalClock,
   formatForecastDay,
   formatForecastDayLong,
   formatForecastShortDate,
@@ -14,7 +14,7 @@ describe('date utilities', () => {
   const instant = new Date('2026-11-12T17:45:00Z')
 
   it('formats date and time in the city timezone, not the device timezone', () => {
-    expect(formatLocalTime(instant, 'Asia/Tokyo')).toMatch(/02:45/)
+    expect(formatLocalTime(instant, 'Asia/Tokyo')).toMatch(/\b0?2:45/)
     expect(formatLocalDate(instant, 'Asia/Tokyo')).toMatch(/Friday/)
     expect(formatLocalDate(instant, 'Asia/Tokyo')).toMatch(/13/)
     expect(formatLocalTime(instant, 'America/New_York')).toMatch(/12:45/)
@@ -32,9 +32,15 @@ describe('date utilities', () => {
     expect(formatForecastShortDate('2026-11-13')).toBe('13 Nov')
   })
 
-  it('extracts the clock time from a local ISO string', () => {
-    expect(formatClockFromIso('2026-11-12T07:13')).toBe('07:13')
-    expect(formatClockFromIso(null)).toBeNull()
-    expect(formatClockFromIso('')).toBeNull()
+  it('formats the wall-clock time of a local ISO string without timezone shifting', () => {
+    expect(formatLocalClock('2026-11-12T07:13')).toMatch(/^0?7:13/)
+    expect(formatLocalClock('2026-11-12T16:15')).toMatch(/(4:15 PM|16:15)/)
+    expect(formatLocalClock('2026-06-01T00:05')).toMatch(/(12:05 AM|00:05)/)
+  })
+
+  it('returns null for missing or malformed values', () => {
+    expect(formatLocalClock(null)).toBeNull()
+    expect(formatLocalClock('')).toBeNull()
+    expect(formatLocalClock('sunrise')).toBeNull()
   })
 })

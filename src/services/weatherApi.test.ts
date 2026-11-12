@@ -224,3 +224,33 @@ describe('parseForecastResponse: malformed data is never returned as weather', (
     expect(() => parseForecastResponse(body)).toThrow(expect.objectContaining({ kind: 'bad-response' }))
   })
 })
+
+describe('missing optional current values degrade instead of failing the report', () => {
+  it.each([
+    ['apparent_temperature', 'apparentTemperatureC'],
+    ['relative_humidity_2m', 'humidityPercent'],
+    ['wind_speed_10m', 'windSpeedKmh'],
+    ['wind_direction_10m', 'windDirectionDegrees'],
+  ] as const)('a null %s becomes null in the report', (field, key) => {
+    const body = buildForecastResponse()
+    body.current[field] = null
+    const report = parseForecastResponse(body)
+    expect(report.current[key]).toBeNull()
+    expect(report.current.temperatureC).toBe(6.7) // the rest is intact
+  })
+
+  it('treats an absent field the same as null', () => {
+    const body = buildForecastResponse()
+    delete (body.current as Partial<typeof body.current>).relative_humidity_2m
+    expect(parseForecastResponse(body).current.humidityPercent).toBeNull()
+  })
+
+  it('still rejects a missing condition code or temperature (nothing meaningful to show)', () => {
+    const noCode = buildForecastResponse()
+    noCode.current.weather_code = null
+    expect(() => parseForecastResponse(noCode)).toThrow(WeatherApiError)
+    const noTemp = buildForecastResponse()
+    noTemp.current.temperature_2m = null
+    expect(() => parseForecastResponse(noTemp)).toThrow(WeatherApiError)
+  })
+})

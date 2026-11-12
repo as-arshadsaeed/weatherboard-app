@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest'
 import {
   areValidCoordinates,
   formatCoordinates,
+  isCity,
   isValidLatitude,
   isValidLongitude,
   normalizeSearchQuery,
   parseCityFromSearch,
+  sanitizeCities,
 } from '@/utils/validation'
 
 describe('coordinate validation', () => {
@@ -69,5 +71,48 @@ describe('normalizeSearchQuery', () => {
   it('trims and collapses whitespace', () => {
     expect(normalizeSearchQuery('  new   york \t')).toBe('new york')
     expect(normalizeSearchQuery('   ')).toBe('')
+  })
+})
+
+describe('isCity / sanitizeCities', () => {
+  const london = { id: 'a', name: 'London', latitude: 51.5, longitude: -0.12, country: 'UK' }
+
+  it('accepts a valid city, with or without optional fields', () => {
+    expect(isCity(london)).toBe(true)
+    expect(isCity({ id: 'a', name: 'X', latitude: 0, longitude: 0 })).toBe(true)
+  })
+
+  it.each([
+    ['null', null],
+    ['a string', 'London'],
+    ['no id', { ...london, id: '' }],
+    ['blank name', { ...london, name: '  ' }],
+    ['non-numeric latitude', { ...london, latitude: '51.5' }],
+    ['out-of-range latitude', { ...london, latitude: 91 }],
+    ['NaN longitude', { ...london, longitude: NaN }],
+    ['non-string country', { ...london, country: 5 }],
+  ])('rejects %s', (_label, value) => {
+    expect(isCity(value)).toBe(false)
+  })
+
+  it('keeps only valid entries from a partly corrupted list', () => {
+    const list = [london, { nope: true }, null, { ...london, id: 'b', name: 'Paris', latitude: 48.85, longitude: 2.35 }]
+    expect(sanitizeCities(list, 5).map((c) => c.name)).toEqual(['London', 'Paris'])
+  })
+
+  it('removes duplicates by id and by coordinates, and caps the length', () => {
+    const sameId = { ...london, latitude: 10, longitude: 10 }
+    const sameSpot = { ...london, id: 'other', latitude: 51.505, longitude: -0.121 }
+    const paris = { ...london, id: 'p', name: 'Paris', latitude: 48.85, longitude: 2.35 }
+    // sameId is a duplicate by id, sameSpot by coordinates; only London and Paris remain.
+    expect(sanitizeCities([london, sameId, sameSpot, paris], 5).map((c) => c.name)).toEqual(['London', 'Paris'])
+
+    const many = Array.from({ length: 8 }, (_, i) => ({ id: `c${i}`, name: `C${i}`, latitude: i * 10, longitude: i * 10 }))
+    expect(sanitizeCities(many, 5)).toHaveLength(5)
+  })
+
+  it('returns an empty list for non-arrays', () => {
+    expect(sanitizeCities({ a: 1 }, 5)).toEqual([])
+    expect(sanitizeCities(undefined, 5)).toEqual([])
   })
 })

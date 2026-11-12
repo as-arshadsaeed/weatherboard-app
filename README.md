@@ -3,10 +3,10 @@
 A responsive, installable weather dashboard PWA: city search, current conditions, 5-day forecast,
 favourite cities, offline access, daily reminders, light/dark themes and °C/°F.
 
-> **Status: Phase 3 of 8 complete** (foundation, live weather, city search). Search any city,
-> see real current conditions and a 5-day forecast. Favourites, units, detail cards, PWA/offline and
-> notifications are not built yet — see [CLAUDE.md](CLAUDE.md) for the spec and phase plan. There is
-> no mock weather data in the app.
+> **Status: Phase 4 of 8 complete** (foundation, live weather, city search, favourites and
+> settings). Search any city, see real conditions, a 5-day forecast and detail cards, switch
+> °C/°F, and keep up to five favourite cities. PWA/offline and notifications are not built yet — see
+> [CLAUDE.md](CLAUDE.md) for the spec and phase plan. There is no mock weather data in the app.
 
 ## Requirements
 
@@ -63,6 +63,39 @@ http://localhost:5173/?lat=35.6762&lon=139.6503&name=Tokyo&country=Japan&region=
 `lat` (−90…90) and `lon` (−180…180) are required; `name`, `country`, `region` and `tz` (IANA timezone)
 are optional. Invalid coordinates show "Weather data is unavailable for this location." and make no request.
 
+## Favourites, units and navigation
+
+**Favourites** — press **Add to favourites** on the weather card (a filled star and the word
+"Saved" show the state). Up to **5** cities; a sixth shows "Favourites are full (5 of 5)…". The same
+city found through GeoDB and through Open-Meteo is recognised as one favourite (matched by id or by
+coordinates within ~2 km). Pick a favourite in the panel to load its weather. **Removing always asks
+first** (accessible confirmation dialog: Escape or "Keep" cancels; focus returns sensibly).
+
+**Temperature unit** — the °C / °F control in the header. It converts everything on screen
+immediately (current, feels-like, high/low, every forecast card), is remembered, and never refetches
+(weather is always fetched in °C and converted in the browser). Wind stays in km/h.
+
+**Detail cards** — humidity, wind speed, wind direction (compass point and bearing, the direction
+the wind comes *from*), precipitation chance for today, sunrise and sunset in the city's local time.
+Anything the API does not provide reads "Not available" instead of a guess.
+
+**Navigation** — tablet and desktop show the favourites sidebar beside the weather. On phones a
+bottom bar switches between **Weather** and **Favourites**; choosing a city returns you to the weather.
+
+### What is saved, and what if storage is blocked
+
+| localStorage key            | Contents                                   |
+| --------------------------- | ------------------------------------------ |
+| `weatherboard:favourites`   | Up to 5 saved cities                       |
+| `weatherboard:selectedCity` | The city last shown (restored on reload)   |
+| `weatherboard:unit`         | `celsius` or `fahrenheit`                  |
+| `weatherboard:theme`        | `light` or `dark` (absent = follow the OS) |
+
+Stored values are validated: corrupt data is ignored, and a partly corrupted favourites list keeps
+its valid entries. If the browser blocks local storage (e.g. some private modes), everything still works
+for the session and a dismissible notice explains that favourites and settings will be lost when the tab
+closes. Changes in one tab are not pushed to other open tabs.
+
 ## Weather data
 
 Weather comes from the free, keyless [Open-Meteo](https://open-meteo.com/en/docs) forecast API
@@ -106,12 +139,12 @@ WEATHER_LIVE=1 npx playwright test e2e/weather-live.spec.ts --workers=1
 ```text
 src/
   components/{layout,weather,search,favourites,settings,ui}
-  hooks/      useTheme, useWeather, useCitySearch (debounced, cancellable), useNow
+  hooks/      useTheme, useUnits, useFavourites, useSelectedCity, useWeather, useCitySearch, useNow
   services/   weatherApi, citySearch (+ geoDbApi, openMeteoGeocodingApi, http), storageService
   types/      weather, city, preferences
-  utils/      weatherCodes, temperature, date, validation, city, cn, constants
+  utils/      weatherCodes, temperature, date, wind, validation, city, cn, constants
   styles/     globals.css  ← design tokens (light + dark)
-e2e/          Playwright specs (responsive, a11y, theme, contrast, weather states, search)
+e2e/          Playwright specs (responsive, a11y, theme, contrast, weather, search, units, favourites, navigation)
 ```
 
 ## Design system

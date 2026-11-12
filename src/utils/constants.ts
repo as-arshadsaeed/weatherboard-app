@@ -6,3 +6,6 @@ export const MIN_SEARCH_LENGTH = 2
 export const SEARCH_DEBOUNCE_MS = 250
 export const MAX_SUGGESTIONS = 6
 export const SEARCH_REQUEST_TIMEOUT_MS = 8_000
+
+/** Shown wherever the API provides no value, instead of a guess. */
+export const UNAVAILABLE_TEXT = 'Not available'

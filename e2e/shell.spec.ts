@@ -24,7 +24,14 @@ for (const vp of VIEWPORTS) {
       const errors = trackErrors(page)
       await page.goto('/')
       await expect(page.getByRole('heading', { level: 1, name: 'No city selected' })).toBeVisible()
-      await expect(page.getByRole('region', { name: 'Favourites' })).toBeVisible()
+      if (vp.width < 768) {
+        // Phones: favourites are one tap away behind the bottom bar, not stacked under the weather.
+        await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible()
+        await expect(page.getByRole('region', { name: 'Favourites' })).toBeHidden()
+      } else {
+        await expect(page.getByRole('navigation', { name: 'Main' })).toBeHidden()
+        await expect(page.getByRole('region', { name: 'Favourites' })).toBeVisible()
+      }
 
       const { scrollWidth, clientWidth } = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,
@@ -71,16 +78,20 @@ for (const vp of VIEWPORTS) {
 }
 
 test.describe('header order', () => {
-  test('tablet/desktop read logo → search → theme toggle from left to right, matching tab order', async ({ page }) => {
+  test('tablet/desktop read logo → search → units → theme toggle from left to right, matching tab order', async ({ page }) => {
     for (const width of [768, 1280]) {
       await page.setViewportSize({ width, height: 800 })
       await page.goto('/')
       const x = async (locator: ReturnType<Page['getByRole']>) => (await locator.boundingBox())!.x
       const logo = await x(page.getByRole('link', { name: 'WeatherBoard' }))
       const search = await x(page.getByRole('combobox', { name: 'Search for a city' }))
+      const celsius = await x(page.getByRole('button', { name: 'Celsius (°C)' }))
+      const fahrenheit = await x(page.getByRole('button', { name: 'Fahrenheit (°F)' }))
       const toggle = await x(page.getByRole('button', { name: /switch to/i }))
       expect(logo, `logo before search at ${width}px`).toBeLessThan(search)
-      expect(search, `search before toggle at ${width}px`).toBeLessThan(toggle)
+      expect(search, `search before units at ${width}px`).toBeLessThan(celsius)
+      expect(celsius).toBeLessThan(fahrenheit)
+      expect(fahrenheit, `units before theme at ${width}px`).toBeLessThan(toggle)
     }
   })
 
@@ -89,8 +100,11 @@ test.describe('header order', () => {
     await page.goto('/')
     const logo = (await page.getByRole('link', { name: 'WeatherBoard' }).boundingBox())!
     const toggle = (await page.getByRole('button', { name: /switch to/i }).boundingBox())!
+    const fahrenheit = (await page.getByRole('button', { name: 'Fahrenheit (°F)' }).boundingBox())!
     const search = (await page.getByRole('combobox', { name: 'Search for a city' }).boundingBox())!
     expect(toggle.x).toBeGreaterThan(logo.x + logo.width)
+    expect(fahrenheit.x + fahrenheit.width).toBeLessThanOrEqual(toggle.x) // units sit just left of the theme toggle
+    expect(Math.abs(fahrenheit.y + fahrenheit.height / 2 - (logo.y + logo.height / 2))).toBeLessThan(12)
     expect(Math.abs(toggle.y + toggle.height / 2 - (logo.y + logo.height / 2))).toBeLessThan(12)
     expect(search.y).toBeGreaterThan(logo.y + logo.height)
     expect(search.width).toBeGreaterThan(375 - 40) // full width minus gutters
@@ -104,6 +118,8 @@ test.describe('mobile touch targets', () => {
     await page.goto('/')
     for (const locator of [
       page.getByRole('button', { name: /switch to/i }),
+      page.getByRole('button', { name: 'Celsius (°C)' }),
+      page.getByRole('button', { name: 'Fahrenheit (°F)' }),
       page.getByRole('combobox', { name: 'Search for a city' }),
     ]) {
       const box = await locator.boundingBox()
@@ -160,6 +176,8 @@ test.describe('keyboard', () => {
     await page.keyboard.press('Tab') // skip link
     await page.keyboard.press('Tab') // logo
     await page.keyboard.press('Tab') // city search
+    await page.keyboard.press('Tab') // °C
+    await page.keyboard.press('Tab') // °F
     await page.keyboard.press('Tab') // theme toggle
     await expect(toggle).toBeFocused()
     const outline = await toggle.evaluate((el) => getComputedStyle(el).outlineStyle)

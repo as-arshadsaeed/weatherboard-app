@@ -24,7 +24,7 @@ export function ForecastCard({ day, index, unit }: ForecastCardProps) {
   return (
     <li
       aria-label={formatForecastDayLong(day.date, index)}
-      className="flex min-h-[5.5rem] items-center gap-4 rounded-2xl border bg-card p-4 shadow-card lg:min-h-[14.5rem] lg:flex-col lg:justify-between lg:gap-3 lg:text-center"
+      className="flex min-h-[5.5rem] items-center gap-4 rounded-2xl border bg-card p-4 shadow-card lg:min-h-[15rem] lg:flex-col lg:justify-between lg:gap-3 lg:text-center"
     >
       <div className="w-16 shrink-0 lg:w-auto">
         <p className="text-sm font-semibold">{formatForecastDay(day.date, index)}</p>

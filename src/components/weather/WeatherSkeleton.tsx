@@ -6,7 +6,14 @@ import { formatLocation } from '@/utils/city'
  * Loading placeholder with the same structure and heights as the loaded dashboard,
  * so nothing jumps when data arrives. Shows only what we genuinely know (the city name).
  */
-export function WeatherSkeleton({ city }: { city: City }) {
+export function WeatherSkeleton({
+  city,
+  reserveAction = false,
+}: {
+  city: City
+  /** Reserve space for the action button the loaded card will show (e.g. "Add to favourites"). */
+  reserveAction?: boolean
+}) {
   const place = formatLocation(city)
 
   return (
@@ -25,6 +32,7 @@ export function WeatherSkeleton({ city }: { city: City }) {
               <p className="mt-0.5 h-5" />
             )}
             <Skeleton className="mt-2.5 h-4 w-48" />
+            {reserveAction && <Skeleton className="mt-3 h-11 w-40 rounded-lg md:h-9" />}
           </div>
           <Skeleton className="hidden size-20 rounded-3xl sm:block" />
         </div>
@@ -43,13 +51,24 @@ export function WeatherSkeleton({ city }: { city: City }) {
       </section>
 
       <div>
-        <Skeleton className="mb-3 h-5 w-28" />
-        <div className="grid gap-3 lg:grid-cols-5">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="min-h-[5.5rem] rounded-2xl lg:min-h-[14.5rem]" />
+        <Skeleton className="mb-3 h-5 w-32" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="min-h-[6.5rem] rounded-2xl" />
           ))}
         </div>
       </div>
+
+      <div>
+        <Skeleton className="mb-3 h-5 w-28" />
+        <div className="grid gap-3 lg:grid-cols-5">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="min-h-[5.5rem] rounded-2xl lg:min-h-[15rem]" />
+          ))}
+        </div>
+      </div>
+
+      <Skeleton className="h-4 w-44" />
     </div>
   )
 }

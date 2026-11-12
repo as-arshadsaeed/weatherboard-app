@@ -18,7 +18,7 @@ for (const vp of [
 
     await page.goto('/?lat=35.6762&lon=139.6503&name=Tokyo&country=Japan&region=Tokyo')
     await expect(page.getByRole('heading', { level: 1, name: 'Tokyo' })).toBeVisible()
-    await expect(page.getByRole('list').getByRole('listitem')).toHaveCount(5, { timeout: 15_000 })
+    await expect(page.locator('main').getByRole('listitem')).toHaveCount(5, { timeout: 15_000 })
     await expect(page.getByText('Weather data by')).toBeVisible()
 
     const { sw, cw } = await page.evaluate(() => ({
@@ -54,7 +54,7 @@ test('live: search a city with the real geocoding API, select it, and see its re
 
   await options.first().click()
   await expect(page.getByRole('heading', { level: 1, name: 'Tokyo' })).toBeVisible()
-  await expect(page.getByRole('list').getByRole('listitem')).toHaveCount(5, { timeout: 20_000 })
+  await expect(page.locator('main').getByRole('listitem')).toHaveCount(5, { timeout: 20_000 })
   await expect(page.getByText('Weather data by Open-Meteo.com')).toBeVisible()
   expect(errors).toEqual([])
 
