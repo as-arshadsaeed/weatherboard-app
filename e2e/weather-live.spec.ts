@@ -37,3 +37,28 @@ for (const vp of [
     }
   })
 }
+
+test('live: search a city with the real geocoding API, select it, and see its real weather', async ({ page }) => {
+  // The build under test has a dummy GeoDB key; block that host so the keyless fallback is exercised.
+  await page.route('**/wft-geo-db.p.rapidapi.com/**', (route) => route.abort('failed'))
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+
+  await page.goto('/')
+  await page.getByRole('combobox', { name: 'Search for a city' }).fill('tokyo')
+  const options = page.getByRole('option')
+  await expect(options.first()).toBeVisible({ timeout: 20_000 })
+  expect(await options.count()).toBeLessThanOrEqual(6)
+  await expect(options.first()).toContainText('Tokyo')
+  await expect(options.first()).toContainText('Japan')
+
+  await options.first().click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Tokyo' })).toBeVisible()
+  await expect(page.getByRole('list').getByRole('listitem')).toHaveCount(5, { timeout: 20_000 })
+  await expect(page.getByText('Weather data by Open-Meteo.com')).toBeVisible()
+  expect(errors).toEqual([])
+
+  if (process.env.SCREENSHOT_DIR) {
+    await page.screenshot({ path: `${process.env.SCREENSHOT_DIR}/live-search-selected.png`, fullPage: true })
+  }
+})

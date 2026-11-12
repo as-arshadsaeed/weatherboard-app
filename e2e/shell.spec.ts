@@ -53,7 +53,7 @@ for (const vp of VIEWPORTS) {
       const boxes = await Promise.all(
         [
           page.getByRole('link', { name: 'WeatherBoard' }),
-          page.getByRole('searchbox', { name: 'Search for a city' }),
+          page.getByRole('combobox', { name: 'Search for a city' }),
           page.getByRole('button', { name: /switch to/i }),
         ].map((l) => l.boundingBox()),
       )
@@ -70,6 +70,33 @@ for (const vp of VIEWPORTS) {
   })
 }
 
+test.describe('header order', () => {
+  test('tablet/desktop read logo → search → theme toggle from left to right, matching tab order', async ({ page }) => {
+    for (const width of [768, 1280]) {
+      await page.setViewportSize({ width, height: 800 })
+      await page.goto('/')
+      const x = async (locator: ReturnType<Page['getByRole']>) => (await locator.boundingBox())!.x
+      const logo = await x(page.getByRole('link', { name: 'WeatherBoard' }))
+      const search = await x(page.getByRole('combobox', { name: 'Search for a city' }))
+      const toggle = await x(page.getByRole('button', { name: /switch to/i }))
+      expect(logo, `logo before search at ${width}px`).toBeLessThan(search)
+      expect(search, `search before toggle at ${width}px`).toBeLessThan(toggle)
+    }
+  })
+
+  test('mobile: logo and theme toggle share the first row, search spans its own row below', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.goto('/')
+    const logo = (await page.getByRole('link', { name: 'WeatherBoard' }).boundingBox())!
+    const toggle = (await page.getByRole('button', { name: /switch to/i }).boundingBox())!
+    const search = (await page.getByRole('combobox', { name: 'Search for a city' }).boundingBox())!
+    expect(toggle.x).toBeGreaterThan(logo.x + logo.width)
+    expect(Math.abs(toggle.y + toggle.height / 2 - (logo.y + logo.height / 2))).toBeLessThan(12)
+    expect(search.y).toBeGreaterThan(logo.y + logo.height)
+    expect(search.width).toBeGreaterThan(375 - 40) // full width minus gutters
+  })
+})
+
 test.describe('mobile touch targets', () => {
   test.use({ viewport: { width: 375, height: 812 } })
 
@@ -77,7 +104,7 @@ test.describe('mobile touch targets', () => {
     await page.goto('/')
     for (const locator of [
       page.getByRole('button', { name: /switch to/i }),
-      page.getByRole('searchbox', { name: 'Search for a city' }),
+      page.getByRole('combobox', { name: 'Search for a city' }),
     ]) {
       const box = await locator.boundingBox()
       expect(box!.width).toBeGreaterThanOrEqual(44)
@@ -132,7 +159,8 @@ test.describe('keyboard', () => {
     const toggle = page.getByRole('button', { name: /switch to/i })
     await page.keyboard.press('Tab') // skip link
     await page.keyboard.press('Tab') // logo
-    await page.keyboard.press('Tab') // theme toggle (search is disabled)
+    await page.keyboard.press('Tab') // city search
+    await page.keyboard.press('Tab') // theme toggle
     await expect(toggle).toBeFocused()
     const outline = await toggle.evaluate((el) => getComputedStyle(el).outlineStyle)
     expect(outline).toBe('solid')
