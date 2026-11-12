@@ -78,12 +78,16 @@ test.describe('forecast layout', () => {
     await mockWeather(page)
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto(LONDON_URL)
-    const desktopTops = await page.locator('main').getByRole('listitem').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)))
-    expect(new Set(desktopTops).size).toBe(1)
+    const items = page.locator('main').getByRole('listitem')
+    // Wait for the forecast to be rendered first: evaluateAll does not retry, so measuring right after
+    // navigation could see an empty list.
+    await expect(items).toHaveCount(5)
+    const distinctRows = async () =>
+      new Set(await items.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)))).size
+    await expect.poll(distinctRows).toBe(1)
 
     await page.setViewportSize({ width: 375, height: 812 })
-    const mobileTops = await page.locator('main').getByRole('listitem').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)))
-    expect(new Set(mobileTops).size).toBe(5)
+    await expect.poll(distinctRows).toBe(5)
   })
 })
 
