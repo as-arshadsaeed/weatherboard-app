@@ -1,3 +1,4 @@
+import { RequestError, requestJson } from '@/services/http'
 import type { City } from '@/types/city'
 import type {
   CurrentConditions,
@@ -170,15 +171,23 @@ export function parseForecastResponse(
 // Request
 // ---------------------------------------------------------------------------
 
-function statusToErrorKind(status: number): WeatherErrorKind {
+function statusToErrorKind(status: number | undefined): WeatherErrorKind {
   if (status === 400 || status === 404 || status === 422) return 'invalid-location'
   if (status === 429) return 'rate-limited'
   return 'unavailable'
 }
 
-/** Matches by name rather than `instanceof` so it also works for errors from another realm. */
-function isTimeoutError(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && (error as { name?: unknown }).name === 'TimeoutError'
+function toWeatherError(error: RequestError): WeatherApiError {
+  switch (error.kind) {
+    case 'network':
+      return new WeatherApiError('network', { cause: error })
+    case 'timeout':
+      return new WeatherApiError('timeout', { cause: error })
+    case 'invalid-json':
+      return new WeatherApiError('bad-response', { cause: error })
+    case 'http-error':
+      return new WeatherApiError(statusToErrorKind(error.status), { cause: error })
+  }
 }
 
 export interface FetchWeatherOptions {
@@ -196,33 +205,11 @@ export async function fetchWeather(
     throw new WeatherApiError('invalid-location')
   }
 
-  const timeoutSignal = AbortSignal.timeout(timeoutMs)
-  const combined = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal
-
-  let response: Response
-  try {
-    response = await fetch(buildForecastUrl(city), { signal: combined })
-  } catch (error) {
-    if (signal?.aborted) throw error
-    if (isTimeoutError(error)) {
-      throw new WeatherApiError('timeout', { cause: error })
-    }
-    throw new WeatherApiError('network', { cause: error })
-  }
-
-  if (!response.ok) {
-    throw new WeatherApiError(statusToErrorKind(response.status))
-  }
-
   let json: unknown
   try {
-    json = await response.json()
+    json = await requestJson(buildForecastUrl(city), { signal, timeoutMs })
   } catch (error) {
-    if (signal?.aborted) throw error
-    if (isTimeoutError(error)) {
-      throw new WeatherApiError('timeout', { cause: error })
-    }
-    throw new WeatherApiError('bad-response', { cause: error })
+    throw error instanceof RequestError ? toWeatherError(error) : error
   }
 
   // Failed/odd payloads are never returned as weather (and so can never be cached as valid data).
