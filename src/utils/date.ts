@@ -1,4 +1,4 @@
-import { format, parse } from 'date-fns'
+import { format, formatDistance, parse } from 'date-fns'
 
 /** Format an instant in a specific IANA timezone; falls back to the device timezone if it is unknown. */
 function formatInTimezone(
@@ -58,4 +58,19 @@ export function formatLocalClock(value: string | null): string | null {
     minute: '2-digit',
     timeZone: 'UTC',
   }).format(instant)
+}
+
+/**
+ * When saved weather was retrieved, for the viewer (their own timezone): an absolute time such as
+ * "Thu 12 Nov, 6:48 PM" and a relative one such as "about 3 hours ago".
+ */
+export function formatSavedAt(timestamp: number, now: number = Date.now()): { absolute: string; relative: string } {
+  const absolute = new Intl.DateTimeFormat(undefined, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(timestamp)
+  return { absolute, relative: formatDistance(timestamp, now, { addSuffix: true }) }
 }

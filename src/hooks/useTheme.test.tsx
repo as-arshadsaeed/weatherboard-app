@@ -99,4 +99,31 @@ describe('useTheme', () => {
     act(() => result.current.toggleTheme())
     expect(result.current.theme).toBe('dark')
   })
+
+  describe('browser theme colour', () => {
+    function addMetas() {
+      document.head.innerHTML =
+        '<meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">' +
+        '<meta name="theme-color" content="#0a0c11" media="(prefers-color-scheme: dark)">'
+    }
+    const colours = () => [...document.querySelectorAll('meta[name="theme-color"]')].map((m) => m.getAttribute('content'))
+    afterEach(() => (document.head.innerHTML = ''))
+
+    it('matches the theme, including a manual override of the OS theme', () => {
+      addMetas()
+      mockSystemTheme(false)
+      const { result } = renderHook(() => useTheme())
+      expect(colours()).toEqual(['#f8fafc', '#f8fafc'])
+
+      act(() => result.current.toggleTheme())
+      expect(colours()).toEqual(['#0a0c11', '#0a0c11'])
+      act(() => result.current.toggleTheme())
+      expect(colours()).toEqual(['#f8fafc', '#f8fafc'])
+    })
+
+    it('does nothing (and does not throw) when there is no theme-color tag', () => {
+      mockSystemTheme(true)
+      expect(() => renderHook(() => useTheme())).not.toThrow()
+    })
+  })
 })

@@ -9,3 +9,6 @@ export const SEARCH_REQUEST_TIMEOUT_MS = 8_000
 
 /** Shown wherever the API provides no value, instead of a guess. */
 export const UNAVAILABLE_TEXT = 'Not available'
+
+/** Browser UI colours matching the --background token in each theme (see also vite.config.ts and index.html). */
+export const THEME_COLORS = { light: '#f8fafc', dark: '#0a0c11' } as const

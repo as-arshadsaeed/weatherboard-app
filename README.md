@@ -3,10 +3,9 @@
 A responsive, installable weather dashboard PWA: city search, current conditions, 5-day forecast,
 favourite cities, offline access, daily reminders, light/dark themes and °C/°F.
 
-> **Status: Phase 4 of 8 complete** (foundation, live weather, city search, favourites and
-> settings). Search any city, see real conditions, a 5-day forecast and detail cards, switch
-> °C/°F, and keep up to five favourite cities. PWA/offline and notifications are not built yet — see
-> [CLAUDE.md](CLAUDE.md) for the spec and phase plan. There is no mock weather data in the app.
+> **Status: Phase 5 of 8 complete** (foundation, live weather, city search, favourites and
+> settings, installable PWA with offline weather). Notifications, polish and deployment are not built
+> yet — see [CLAUDE.md](CLAUDE.md) for the spec and phase plan. There is no mock weather data in the app.
 
 ## Requirements
 
@@ -91,10 +90,37 @@ bottom bar switches between **Weather** and **Favourites**; choosing a city retu
 | `weatherboard:unit`         | `celsius` or `fahrenheit`                  |
 | `weatherboard:theme`        | `light` or `dark` (absent = follow the OS) |
 
+Saved weather is not in localStorage: it is in the `weatherboard` IndexedDB database.
+
 Stored values are validated: corrupt data is ignored, and a partly corrupted favourites list keeps
 its valid entries. If the browser blocks local storage (e.g. some private modes), everything still works
 for the session and a dismissible notice explains that favourites and settings will be lost when the tab
 closes. Changes in one tab are not pushed to other open tabs.
+
+## Installing and using it offline
+
+WeatherBoard is an installable PWA (manifest, 192/512 and maskable icons, standalone display). Use your
+browser's install option (for example the install icon in Chrome's address bar, or "Add to Home Screen").
+Installing needs HTTPS (localhost is exempt) and a **production build**: the service worker is not
+registered by `npm run dev`. Try it with `npm run build && npm run preview`.
+
+**What works offline**
+
+- The app itself opens offline, including deep links, once it has been loaded online one time.
+- **Weather for cities you have viewed.** Each successful forecast is saved on your device (IndexedDB) for
+  the last 10 cities, for up to 7 days. Offline, or when the weather service cannot be reached, you see
+  that saved forecast **clearly labelled** — "Showing saved weather", when it was retrieved ("Fri 13 Nov,
+  1:22 AM, about 3 hours ago") and that conditions may have changed.
+- A city you have **not** viewed has no weather offline, and the app says so instead of guessing.
+- City search needs a connection.
+
+When the connection returns the weather refreshes by itself and the saved copy is replaced. Failed or
+unreadable responses are never saved. Old data (over 7 days) and damaged records are discarded.
+
+**Updates** — a new version downloads in the background and then waits. You are asked "A new version is
+ready — Reload / Later"; nothing reloads unexpectedly, and your favourites, settings and saved weather are
+kept. (The service worker deliberately does **not** cache weather: it would serve stale forecasts as if they
+were live, so saved weather lives in the app with its age instead.)
 
 ## Weather data
 
@@ -139,12 +165,14 @@ WEATHER_LIVE=1 npx playwright test e2e/weather-live.spec.ts --workers=1
 ```text
 src/
   components/{layout,weather,search,favourites,settings,ui}
-  hooks/      useTheme, useUnits, useFavourites, useSelectedCity, useWeather, useCitySearch, useNow
-  services/   weatherApi, citySearch (+ geoDbApi, openMeteoGeocodingApi, http), storageService
+  hooks/      useTheme, useUnits, useFavourites, useSelectedCity, useWeather, useOnlineStatus, useCitySearch, useNow
+  services/   weatherApi, weatherCache (IndexedDB), citySearch (+ geoDbApi, openMeteoGeocodingApi, http), storageService
+  pwa/        serviceWorker (registration + update state)
+scripts/      generate-icons.mjs
   types/      weather, city, preferences
   utils/      weatherCodes, temperature, date, wind, validation, city, cn, constants
   styles/     globals.css  ← design tokens (light + dark)
-e2e/          Playwright specs (responsive, a11y, theme, contrast, weather, search, units, favourites, navigation)
+e2e/          Playwright specs (responsive, a11y, theme, contrast, weather, search, units, favourites, navigation, pwa, offline)
 ```
 
 ## Design system

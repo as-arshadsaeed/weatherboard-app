@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 
 import { getStoredValue, setStoredValue } from '@/services/storageService'
 import { isThemeMode, type ThemeMode } from '@/types/preferences'
+import { THEME_COLORS } from '@/utils/constants'
 
 /** Keep in sync with the pre-paint script in index.html. */
 export const THEME_STORAGE_KEY = 'theme'
@@ -37,6 +38,10 @@ export function useTheme() {
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
+    // Recolour the browser/status bar to match, including when the user overrides the OS theme.
+    document
+      .querySelectorAll('meta[name="theme-color"]')
+      .forEach((meta) => meta.setAttribute('content', THEME_COLORS[theme]))
   }, [theme])
 
   const setTheme = useCallback((next: ThemeMode) => {

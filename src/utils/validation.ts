@@ -1,4 +1,5 @@
 import type { City } from '@/types/city'
+import type { WeatherReport } from '@/types/weather'
 import { isSameCity } from '@/utils/city'
 
 export function isValidLatitude(value: number): boolean {
@@ -84,4 +85,51 @@ export function sanitizeCities(value: unknown, max: number): City[] {
     if (isCity(item) && !cities.some((existing) => isSameCity(existing, item))) cities.push(item)
   }
   return cities
+}
+
+const isFiniteNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value)
+const isNullableNumber = (value: unknown): boolean => value === null || isFiniteNumber(value)
+const isNullableString = (value: unknown): boolean => value === null || typeof value === 'string'
+
+/** Runtime check for a WeatherReport read back from IndexedDB (stored data is never trusted). */
+export function isWeatherReport(value: unknown): value is WeatherReport {
+  if (typeof value !== 'object' || value === null) return false
+  const report = value as Record<string, unknown>
+  const current = report.current as Record<string, unknown> | null | undefined
+  if (
+    !isFiniteNumber(report.latitude) ||
+    !isFiniteNumber(report.longitude) ||
+    typeof report.timezone !== 'string' ||
+    !isFiniteNumber(report.fetchedAt) ||
+    typeof current !== 'object' ||
+    current === null ||
+    !Array.isArray(report.daily) ||
+    report.daily.length !== 5
+  ) {
+    return false
+  }
+  const currentOk =
+    typeof current.time === 'string' &&
+    isFiniteNumber(current.temperatureC) &&
+    isFiniteNumber(current.weatherCode) &&
+    typeof current.isDay === 'boolean' &&
+    isNullableNumber(current.apparentTemperatureC) &&
+    isNullableNumber(current.humidityPercent) &&
+    isNullableNumber(current.windSpeedKmh) &&
+    isNullableNumber(current.windDirectionDegrees)
+  if (!currentOk) return false
+
+  return (report.daily as unknown[]).every((day) => {
+    if (typeof day !== 'object' || day === null) return false
+    const d = day as Record<string, unknown>
+    return (
+      typeof d.date === 'string' &&
+      isFiniteNumber(d.weatherCode) &&
+      isFiniteNumber(d.maxTemperatureC) &&
+      isFiniteNumber(d.minTemperatureC) &&
+      isNullableNumber(d.precipitationProbabilityPercent) &&
+      isNullableString(d.sunrise) &&
+      isNullableString(d.sunset)
+    )
+  })
 }
