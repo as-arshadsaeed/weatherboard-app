@@ -5,6 +5,7 @@ import {
   formatCoordinates,
   isValidLatitude,
   isValidLongitude,
+  normalizeSearchQuery,
   parseCityFromSearch,
 } from '@/utils/validation'
 
@@ -61,5 +62,12 @@ describe('parseCityFromSearch', () => {
     expect(Number.isNaN(bad?.longitude)).toBe(true)
     expect(bad?.name).toBe('Selected location')
     expect(parseCityFromSearch('?lat=999&lon=0')?.latitude).toBe(999)
+  })
+})
+
+describe('normalizeSearchQuery', () => {
+  it('trims and collapses whitespace', () => {
+    expect(normalizeSearchQuery('  new   york \t')).toBe('new york')
+    expect(normalizeSearchQuery('   ')).toBe('')
   })
 })

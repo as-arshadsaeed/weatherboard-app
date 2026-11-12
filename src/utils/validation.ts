@@ -46,3 +46,8 @@ export function parseCityFromSearch(search: string): City | null {
     timezone: timezone || undefined,
   }
 }
+
+/** Trim and collapse internal whitespace so "  new   york " and "new york" are the same search. */
+export function normalizeSearchQuery(query: string): string {
+  return query.trim().replace(/\s+/g, ' ')
+}
