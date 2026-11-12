@@ -1,0 +1,1001 @@
+# WeatherBoard — Project Instructions
+
+## 1. Project Overview
+
+Build **WeatherBoard**, a polished, responsive, installable Progressive Web Application (PWA) that allows users to:
+
+- Search for cities worldwide with live autocomplete.
+- View real-time weather conditions.
+- View a 5-day weather forecast.
+- Save up to 5 favourite cities.
+- Access previously viewed weather while offline.
+- Configure daily weather reminders.
+- Switch between light and dark themes.
+- Switch between Celsius and Fahrenheit.
+
+The application must feel like a production-quality consumer SaaS product.
+
+### Product principles
+
+- Clean, minimal, modern interface.
+- Fast and responsive interactions.
+- Accurate real weather data.
+- Accessible design.
+- Mobile-first development.
+- Graceful API and network failure handling.
+- No mock weather data in production.
+- No unnecessary complexity.
+- Client-side architecture wherever technically feasible.
+
+---
+
+## 2. Technology Stack
+
+Use the following stack unless a technical limitation requires a documented alternative.
+
+| Category         | Technology              |
+| ---------------- | ----------------------- |
+| Framework        | React                   |
+| Language         | TypeScript              |
+| Build tool       | Vite                    |
+| Styling          | Tailwind CSS            |
+| UI components    | shadcn/ui               |
+| Icons            | Lucide React            |
+| Weather API      | Open-Meteo              |
+| City search      | GeoDB Cities API        |
+| PWA              | Vite PWA Plugin         |
+| Offline storage  | IndexedDB               |
+| User preferences | localStorage            |
+| Animations       | CSS animations / Lottie |
+| Date formatting  | date-fns                |
+| Deployment       | Vercel / Netlify        |
+
+Use current stable package versions and compatible dependencies.
+
+Do not introduce unnecessary libraries.
+
+---
+
+## 3. Architecture
+
+Build a single-page application using reusable components.
+
+Recommended project structure:
+
+```text
+weatherboard/
+│
+├── public/
+│   ├── icons/
+│   │   ├── icon-192.png
+│   │   └── icon-512.png
+│   └── favicon.svg
+│
+├── src/
+│   ├── components/
+│   │   ├── layout/
+│   │   │   ├── Header.tsx
+│   │   │   ├── Sidebar.tsx
+│   │   │   └── MobileNavigation.tsx
+│   │   │
+│   │   ├── weather/
+│   │   │   ├── CurrentWeather.tsx
+│   │   │   ├── WeatherDetails.tsx
+│   │   │   ├── ForecastCard.tsx
+│   │   │   ├── FiveDayForecast.tsx
+│   │   │   └── WeatherIcon.tsx
+│   │   │
+│   │   ├── search/
+│   │   │   ├── CitySearch.tsx
+│   │   │   └── SearchSuggestions.tsx
+│   │   │
+│   │   ├── favourites/
+│   │   │   └── FavouriteCities.tsx
+│   │   │
+│   │   ├── settings/
+│   │   │   ├── ThemeToggle.tsx
+│   │   │   ├── UnitToggle.tsx
+│   │   │   └── NotificationSettings.tsx
+│   │   │
+│   │   └── ui/
+│   │
+│   ├── hooks/
+│   │   ├── useWeather.ts
+│   │   ├── useCitySearch.ts
+│   │   ├── useFavourites.ts
+│   │   ├── useTheme.ts
+│   │   ├── useUnits.ts
+│   │   └── useOnlineStatus.ts
+│   │
+│   ├── services/
+│   │   ├── weatherApi.ts
+│   │   ├── geoDbApi.ts
+│   │   ├── storageService.ts
+│   │   └── notificationService.ts
+│   │
+│   ├── types/
+│   │   ├── weather.ts
+│   │   ├── city.ts
+│   │   └── preferences.ts
+│   │
+│   ├── utils/
+│   │   ├── weatherCodes.ts
+│   │   ├── temperature.ts
+│   │   ├── validation.ts
+│   │   └── date.ts
+│   │
+│   ├── styles/
+│   │   └── globals.css
+│   │
+│   ├── App.tsx
+│   └── main.tsx
+│
+├── index.html
+├── vite.config.ts
+├── package.json
+├── tsconfig.json
+├── .env.example
+├── .gitignore
+├── CLAUDE.md
+└── README.md
+```
+
+Keep components small, reusable and focused on a single responsibility.
+
+Separate API requests, state management, UI components and utility functions.
+
+---
+
+## 4. API Integration
+
+### 4.1 Open-Meteo Weather API
+
+Use Open-Meteo as the primary weather provider.
+
+Documentation:
+https://open-meteo.com/en/docs
+
+Use the forecast endpoint:
+
+https://api.open-meteo.com/v1/forecast
+
+Fetch:
+
+**Current weather**
+
+- Temperature.
+- Relative humidity.
+- Apparent temperature.
+- Wind speed.
+- Wind direction.
+- Weather condition code.
+- Day/night indicator.
+
+**Daily forecast**
+
+- Maximum temperature.
+- Minimum temperature.
+- Weather condition code.
+- Precipitation probability.
+- Sunrise.
+- Sunset.
+
+Request timezone-aware data using the city's timezone.
+
+Display five calendar days of forecast data, including today.
+
+Map Open-Meteo weather codes to readable weather descriptions and appropriate icons.
+
+Do not hardcode weather values.
+
+Include weather data attribution:
+"Weather data by Open-Meteo.com"
+
+### 4.2 GeoDB Cities API
+
+Use GeoDB Cities for city autocomplete.
+
+Documentation:
+https://rapidapi.com/wirefreethought/api/geodb-cities
+
+Requirements:
+
+- Search as the user types.
+- Minimum input length: 2 characters.
+- Debounce requests by approximately 250 ms.
+- Abort outdated requests.
+- Display a maximum of 6 suggestions.
+- Display city, region and country.
+- Allow selection using keyboard and mouse.
+- Show loading, empty and error states.
+- Cache recent successful searches where appropriate.
+
+Target: suggestions should appear within 300 ms after the user pauses when network and API conditions permit. Do not claim a guaranteed network response time.
+
+Use environment configuration:
+
+VITE_GEODB_API_KEY=
+
+Important:
+Browser environment variables are public and must never be treated as secrets. GeoDB credentials exposed in a frontend build must have appropriate provider-side restrictions and quota limits. If secure credential handling is required, introduce a lightweight server-side proxy, documenting the deviation from the client-only requirement.
+
+Provide a no-key Open-Meteo geocoding fallback if GeoDB is unavailable.
+
+### 4.3 API Error Handling
+
+Every API request must have:
+
+- Loading state.
+- Success state.
+- Empty state where applicable.
+- Error state.
+- Timeout handling.
+- Network failure handling.
+- Request cancellation where appropriate.
+
+Never use generic "Something went wrong" messages.
+
+Examples:
+
+- "Unable to retrieve weather data. Check your internet connection and try again."
+- "No cities found. Try another spelling or search by country."
+- "City search is temporarily unavailable. Please try again."
+- "Weather data is unavailable for this location."
+
+Keep error messages understandable to non-technical users.
+
+---
+
+## 5. City Search and Validation
+
+Build an accessible autocomplete search component.
+
+Requirements:
+
+- Search suggestions appear below the input.
+- Suggestions update as the user types.
+- Selecting a suggestion fetches its weather.
+- Empty input displays an inline validation error on blur.
+- Input shorter than two characters displays guidance.
+- No-results state is visible.
+- API errors are visible.
+- Enter selects the highlighted suggestion.
+- Arrow keys navigate suggestions.
+- Escape closes suggestions.
+- Clicking outside closes the suggestion panel.
+- Do not submit an unverified city name.
+
+Use appropriate ARIA combobox and listbox attributes.
+
+Prevent race conditions between overlapping search requests.
+
+---
+
+## 6. Weather Dashboard UI
+
+Build a visually polished dashboard.
+
+### Header
+
+Include:
+
+- WeatherBoard logo.
+- City search.
+- Theme toggle.
+- Temperature unit toggle.
+- Settings access.
+
+### Main weather section
+
+Display:
+
+- Selected city and country.
+- Current date and local time.
+- Large current temperature.
+- Animated weather icon.
+- Weather description.
+- Feels-like temperature.
+- High and low temperature.
+
+### Weather details
+
+Create compact information cards for:
+
+- Humidity.
+- Wind speed.
+- Wind direction.
+- Precipitation probability.
+- Sunrise.
+- Sunset.
+
+### Five-day forecast
+
+Create five responsive forecast cards.
+
+Each card should show:
+
+- Day name.
+- Weather icon.
+- Weather description.
+- Maximum temperature.
+- Minimum temperature.
+- Precipitation probability.
+
+### Favourite cities
+
+Allow users to:
+
+- Add a city to favourites.
+- Save a maximum of five cities.
+- View favourite cities in a quick-access panel.
+- Switch to a favourite city.
+- Remove a favourite city after confirmation.
+
+Persist favourites using localStorage.
+
+If localStorage is unavailable, use an in-memory fallback and show a non-blocking message that preferences will not persist.
+
+Prevent duplicate favourites using stable city identifiers or coordinates.
+
+---
+
+## 7. Design System and UI/UX
+
+Use the following products as visual inspiration:
+
+- https://linear.app
+- https://vercel.com
+- https://stripe.com
+- https://mercury.com
+
+Do not directly copy their interfaces.
+
+### Design direction
+
+Create a premium, minimalist weather dashboard.
+
+Design characteristics:
+
+- Spacious layout.
+- Clear visual hierarchy.
+- Subtle borders.
+- Soft shadows.
+- Consistent spacing.
+- Rounded cards.
+- Clean typography.
+- Smooth transitions.
+- Restrained use of colour.
+- Weather-related accent colours.
+- Excellent contrast.
+
+Use a consistent design token system.
+
+Avoid excessive gradients, excessive glassmorphism and unnecessary decorative elements.
+
+### Layout
+
+Desktop:
+
+- Sidebar or structured navigation.
+- Main weather panel.
+- Forecast and details arranged in a responsive grid.
+
+Tablet:
+
+- Compact navigation.
+- Two-column content where appropriate.
+
+Mobile:
+
+- Single-column layout.
+- Compact header.
+- Full-width search.
+- Stacked weather cards.
+- Horizontally scrollable forecast cards only where necessary.
+
+### Responsive breakpoints
+
+Test at:
+
+- 375px.
+- 768px.
+- 1280px.
+
+Requirements:
+
+- No unintended horizontal page scrolling.
+- Minimum 44 × 44px touch targets on mobile.
+- Readable typography.
+- Proper spacing.
+- No overlapping elements.
+
+---
+
+## 8. Dark and Light Themes
+
+Implement:
+
+- Light mode.
+- Dark mode.
+- System preference detection.
+
+Requirements:
+
+- Detect the user's operating-system theme on first visit.
+- Allow manual switching.
+- Persist manual preference.
+- Update the interface without page reload.
+- Use semantic design tokens rather than hardcoded colours throughout components.
+
+Ensure readable contrast in both themes.
+
+---
+
+## 9. Temperature Unit Switching
+
+Support:
+
+- Celsius.
+- Fahrenheit.
+
+Requirements:
+
+- Persist selection in localStorage.
+- Update all visible temperature values immediately.
+- Update current weather.
+- Update forecast.
+- Update feels-like temperature.
+- Avoid unnecessary API requests when changing units.
+
+Use a centralized temperature conversion utility.
+
+Never mix units in the same display.
+
+---
+
+## 10. Progressive Web Application
+
+Implement a valid installable PWA.
+
+Use Vite PWA Plugin.
+
+### Web manifest
+
+Include:
+
+- name: WeatherBoard
+- short_name: WeatherBoard
+- start_url: /
+- display: standalone
+- theme_color
+- background_color
+- description
+- 192 × 192 icon
+- 512 × 512 icon
+
+Generate original application icons.
+
+### Service worker
+
+Implement:
+
+- Application shell caching.
+- Static asset caching.
+- Offline fallback.
+- Last-viewed city weather caching.
+- Appropriate cache expiration.
+- Cache versioning.
+- Cache cleanup during activation.
+
+Use IndexedDB to persist the last successfully retrieved weather response.
+
+Do not cache failed API responses as valid weather data.
+
+When offline:
+
+- Display an offline banner.
+- Show the last successfully cached city's weather.
+- Display the timestamp of the cached data.
+- Clearly identify cached data as potentially outdated.
+- Keep cached weather available after refreshing the application.
+
+Do not claim offline access for cities that have not been cached.
+
+Ensure service worker updates do not unexpectedly destroy cached weather.
+
+---
+
+## 11. Notifications and Daily Reminders
+
+Build a notification settings interface.
+
+Users should be able to:
+
+- Enable reminders.
+- Select a preferred morning reminder time.
+- Disable reminders.
+- See current notification permission status.
+
+### Permission flow
+
+Before requesting notification permission, explain:
+
+"We'd like to send you a daily morning reminder to check your local weather, so you can plan your day."
+
+Only request permission after the user explicitly enables reminders.
+
+Handle:
+
+- Permission granted.
+- Permission denied.
+- Notifications unsupported.
+- Service worker unavailable.
+- Reminder disabled.
+
+Denied permission must never break the weather dashboard.
+
+### Technical limitation
+
+The Notifications API alone cannot guarantee a daily notification when the application is closed.
+
+A real Web Push implementation requires:
+
+- A push subscription.
+- A VAPID key pair.
+- A push service.
+- A server-side sender or scheduled push provider.
+- Subscription storage.
+- A scheduled job to send reminders.
+
+Because the initial project is client-side only, implement a clearly labelled in-app reminder fallback while the application is open.
+
+Do not claim that a client-side timer or service worker can reliably send scheduled notifications after the browser is closed.
+
+Keep the notification service modular so a server-side Web Push provider can be integrated later without rewriting the UI.
+
+Do not request or implement a fake background push solution.
+
+---
+
+## 12. Data Persistence
+
+Use localStorage for:
+
+- Favourite cities.
+- Theme preference.
+- Temperature unit.
+- Reminder preference.
+- Selected city identifier.
+
+Use IndexedDB for:
+
+- Last viewed city weather.
+- Last successful weather timestamp.
+- Offline weather snapshot.
+- Optional recent city cache.
+
+All persistence operations must handle unavailable storage and corrupted data gracefully.
+
+---
+
+## 13. Loading and Empty States
+
+Create polished states for:
+
+- Initial application loading.
+- City search loading.
+- Weather loading.
+- Forecast loading.
+- No search results.
+- No favourites.
+- Offline mode.
+- API failure.
+- Cached weather display.
+
+Use skeleton loaders where appropriate.
+
+Avoid layout shifts during loading.
+
+Do not display fake weather values while loading.
+
+---
+
+## 14. Performance Requirements
+
+Optimize for:
+
+- Fast initial rendering.
+- Minimal unnecessary re-renders.
+- Debounced search.
+- Cancelled outdated requests.
+- Efficient caching.
+- Lazy loading where appropriate.
+- Small production bundle.
+- Responsive animations.
+
+Respect prefers-reduced-motion.
+
+Avoid unnecessary API calls when changing themes, temperature units or dashboard layout.
+
+---
+
+## 15. Accessibility
+
+Follow WCAG 2.2 AA principles where applicable.
+
+Requirements:
+
+- Semantic HTML.
+- Keyboard navigation.
+- Visible focus states.
+- Accessible form labels.
+- ARIA attributes for autocomplete.
+- Sufficient colour contrast.
+- Accessible confirmation dialogs.
+- Screen-reader-friendly weather descriptions.
+- Reduced motion support.
+
+Never rely on colour alone to communicate weather conditions or errors.
+
+---
+
+## 16. Testing and Quality Assurance
+
+Use:
+
+- Vitest.
+- React Testing Library.
+- Playwright for end-to-end tests.
+
+Test the following:
+
+### City search
+
+- Valid city search.
+- Empty input.
+- No matching cities.
+- Network failure.
+- API error.
+- Rapid typing.
+- Keyboard selection.
+
+### Weather
+
+- Successful weather fetch.
+- Loading state.
+- API failure.
+- Invalid coordinates.
+- Current conditions.
+- Five-day forecast.
+
+### Favourites
+
+- Add favourite.
+- Remove favourite.
+- Maximum five favourites.
+- Duplicate prevention.
+- Persistence after reload.
+- Storage unavailable.
+
+### Preferences
+
+- Theme persistence.
+- System theme detection.
+- Unit switching.
+- Unit persistence.
+
+### PWA
+
+- Manifest validity.
+- Service worker registration.
+- Application shell caching.
+- Offline loading.
+- Cached weather display.
+- Offline banner.
+- Cache updates.
+
+### Notifications
+
+- Unsupported browser.
+- Permission denied.
+- Permission granted.
+- Reminder disabled.
+- Honest fallback behaviour.
+
+### Responsive design
+
+Test at:
+
+- 375px.
+- 768px.
+- 1280px.
+
+No console errors, broken layouts or unintended horizontal overflow.
+
+---
+
+## 17. Code Quality Rules
+
+Follow these rules throughout development:
+
+1. Use TypeScript strict mode.
+2. Avoid `any` unless absolutely necessary and documented.
+3. Use reusable React components.
+4. Keep API logic outside UI components.
+5. Keep weather types strongly typed.
+6. Use meaningful variable and function names.
+7. Handle all asynchronous errors.
+8. Avoid duplicated logic.
+9. Do not hardcode weather data.
+10. Do not commit API credentials.
+11. Do not introduce unnecessary dependencies.
+12. Keep components maintainable.
+13. Use environment variables for configurable API credentials.
+14. Add comments only where the implementation needs explanation.
+15. Keep the application functional at every development stage.
+
+Before considering a feature complete, verify its loading, success, error and empty states.
+
+---
+
+## 18. Development Phases
+
+Build WeatherBoard incrementally.
+
+Do not attempt to generate the entire project in a single operation.
+
+### Phase 1 — Foundation
+
+- Initialize Vite and React.
+- Configure TypeScript.
+- Install Tailwind CSS.
+- Configure shadcn/ui.
+- Set up project structure.
+- Create design tokens.
+- Build dashboard shell.
+
+### Phase 2 — Weather API
+
+- Integrate Open-Meteo.
+- Create weather service.
+- Create typed response models.
+- Build current weather component.
+- Build five-day forecast.
+- Implement loading and error states.
+
+### Phase 3 — City Search
+
+- Integrate GeoDB Cities.
+- Implement autocomplete.
+- Add debounce.
+- Add request cancellation.
+- Add validation.
+- Implement fallback geocoding.
+
+### Phase 4 — Dashboard Features
+
+- Favourite cities.
+- Theme toggle.
+- Temperature toggle.
+- Weather detail cards.
+- Responsive navigation.
+
+### Phase 5 — PWA and Offline
+
+- Configure manifest.
+- Generate application icons.
+- Register service worker.
+- Implement application shell caching.
+- Implement IndexedDB weather caching.
+- Build offline mode banner.
+
+### Phase 6 — Notifications
+
+- Build notification settings.
+- Implement permission explanation.
+- Implement supported in-app reminder fallback.
+- Document the server-side requirements for true background Web Push.
+
+### Phase 7 — Polish and Testing
+
+- Add weather animations.
+- Improve transitions.
+- Test accessibility.
+- Test mobile layouts.
+- Test offline behaviour.
+- Run automated tests.
+- Fix TypeScript and lint errors.
+
+### Phase 8 — Deployment
+
+- Prepare production build.
+- Verify HTTPS.
+- Verify PWA installation.
+- Verify service worker.
+- Verify production API configuration.
+- Document deployment steps.
+
+---
+
+## 19. Working Instructions
+
+Work as a senior frontend engineer.
+
+Before implementing each phase:
+
+1. Inspect the existing codebase.
+2. Explain the intended implementation.
+3. Identify dependencies.
+4. Identify technical limitations.
+5. Implement the phase.
+6. Run relevant tests.
+7. Fix errors before moving forward.
+8. Summarize files changed and functionality completed.
+
+Do not silently skip requirements.
+
+Do not pretend an API, service worker or notification feature works if it has not been tested.
+
+When a requirement conflicts with the client-only architecture, explain the conflict and propose the smallest viable alternative.
+
+Maintain this CLAUDE.md as the source of truth throughout development.
+
+Update README.md with setup, environment variables, API configuration, testing and deployment instructions.
+
+---
+
+## 20. Definition of Done
+
+WeatherBoard is complete when:
+
+- City autocomplete works.
+- Real weather data is displayed.
+- Five-day forecast works.
+- All forms have validation.
+- Favourites persist across sessions.
+- Theme preference persists.
+- Temperature units switch correctly.
+- PWA installation works.
+- Offline cached weather works.
+- Offline status is visible.
+- Notification permissions are handled safely.
+- Notification limitations are accurately communicated.
+- Mobile, tablet and desktop layouts work.
+- No critical TypeScript errors.
+- No critical console errors.
+- Production build succeeds.
+- README contains complete setup instructions.
+
+**Final objective:** Deliver a polished, functional, maintainable WeatherBoard PWA, not merely a visual prototype.
+
+---
+
+## 21. Git Workflow and Commit Strategy
+
+Git version control is mandatory throughout development.
+
+### General Rules
+
+1. Initialize Git if the project is not already a Git repository.
+2. Never commit directly to `main` during feature development.
+3. Use a dedicated feature branch for each development phase or substantial feature.
+4. Commit changes after completing and testing each phase or independently testable feature.
+5. Never combine unrelated features into one commit.
+6. Never commit broken, unfinished or untested code.
+7. Never commit API keys, credentials, `.env` files, secrets or generated sensitive data.
+8. Review `git status` and `git diff` before every commit.
+9. Never overwrite or discard existing user changes.
+10. Never use destructive Git commands without explicit approval.
+
+### Branch Naming Convention
+
+Use the following naming convention:
+
+- `feature/project-foundation`
+- `feature/weather-api`
+- `feature/city-search`
+- `feature/favourites-and-settings`
+- `feature/pwa-offline`
+- `feature/notifications`
+- `feature/responsive-polish`
+- `feature/production-deployment`
+
+### Commit Message Convention
+
+Follow Conventional Commits.
+
+Format:
+
+`<type>(<scope>): <description>`
+
+Allowed types:
+
+- `feat`: New functionality.
+- `fix`: Bug fixes.
+- `refactor`: Code restructuring.
+- `style`: UI and styling changes.
+- `test`: Tests.
+- `docs`: Documentation.
+- `chore`: Dependencies and configuration.
+- `perf`: Performance improvements.
+
+Examples:
+
+- `feat(dashboard): build responsive weather dashboard layout`
+- `feat(weather): integrate Open-Meteo API`
+- `feat(search): implement city autocomplete`
+- `feat(favourites): add persistent favourite cities`
+- `feat(pwa): implement offline weather caching`
+- `feat(theme): add dark and light mode`
+- `fix(search): prevent outdated autocomplete requests`
+- `test(weather): add weather API integration tests`
+- `docs(readme): document setup and deployment`
+
+### Commit Workflow
+
+At the end of every development phase:
+
+1. Review all modified files.
+2. Run TypeScript checks.
+3. Run ESLint.
+4. Run relevant automated tests.
+5. Run the production build.
+6. Inspect `git diff`.
+7. Verify that no secrets or unwanted files are included.
+8. Stage only files related to the completed feature.
+9. Create a descriptive Conventional Commit.
+10. Report the commit hash and summary.
+
+Do not use `git add .` blindly. Review and stage relevant files deliberately.
+
+### Branch and Merge Strategy
+
+- Keep `main` as the stable branch.
+- Create a feature branch for each phase.
+- Complete and verify the feature before merging.
+- Merge completed feature branches into `main` only after validation.
+- Do not automatically push to GitHub.
+- Ask for confirmation before pushing or merging if the operation affects a shared remote repository.
+
+### Required Completion Report
+
+After each commit, report:
+
+- Completed feature or phase.
+- Branch name.
+- Commit message.
+- Commit hash.
+- Files changed.
+- Tests executed.
+- Build status.
+- Any outstanding issues.
+
+A phase is not complete until its changes are committed successfully.
+
+Never claim a commit succeeded unless Git confirms it.
+
+---
+
+## 22. Implementation Status & Decisions (maintained during development)
+
+**Phase 1 — Foundation: complete and committed** on branch `feature/project-foundation` (not merged into `main`, not pushed). Phases 2–8 not started.
+
+Git state: `main` holds only the initial README commit; feature branches stay unmerged until approved. `origin` is configured but nothing has been pushed.
+
+Decisions / deviations from the spec:
+
+- **Versions:** React 19, TypeScript 6, Vite 8, Tailwind CSS v4 (`@tailwindcss/vite`, tokens via `@theme inline`; no `tailwind.config`), Vitest 4.
+- **shadcn/ui:** `components.json` is configured (aliases `@/components/ui`, `@/utils/cn`). Primitives are added by hand/adapted rather than via the CLI, which mis-resolved the `@/utils/cn` alias and installed an unrelated `cn` npm package. Verify CLI output before accepting it.
+- **Font:** Inter is self-hosted via `@fontsource-variable/inter` (not Google Fonts) so it works offline in the PWA.
+- **Layout:** the "Sidebar" is the favourites column (md+); on mobile it stacks below the main panel. A separate `MobileNavigation` is deferred to Phase 4 — there is nothing to navigate between yet.
+- **Theme:** the toggle (scheduled for Phase 4) was implemented in Phase 1 (small and needed to verify dark tokens); Phase 4 only needs to confirm it. A pre-paint script in `index.html` prevents a flash; its storage key must match `THEME_STORAGE_KEY`.
+- **Search field:** `CitySearchPlaceholder` is deliberately disabled and inert until Phase 3.
+- **Animations:** CSS/SVG only; Lottie is not used unless a clear technical benefit appears.
+- **Not yet built:** unit toggle, settings access, favourites logic, all weather/API code, PWA, notifications.
+- **ESLint:** `react-refresh/only-export-components` is disabled for `src/components/ui/**` only (shadcn exports variant helpers beside components).
+- **Known advisory:** `npm audit` reports a moderate `minimatch` DoS advisory via ESLint tooling (dev-only, not shipped). The offered fix downgrades ESLint; revisit when upstream patches.
+
+Known technical limitations to honour in later phases:
+
+- **GeoDB key** is public in a client bundle → provider-side restriction required; Open-Meteo geocoding is the keyless fallback.
+- **Web Push** cannot be delivered reliably with the app closed without a server (VAPID, subscription store, scheduler). Phase 6 ships an honest in-app reminder fallback only.
