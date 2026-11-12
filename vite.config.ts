@@ -46,6 +46,8 @@ export default defineConfig({
         navigateFallback: '/index.html',
         // Delete precaches left by previous app versions when the new worker activates.
         cleanupOutdatedCaches: true,
+        // Clicking a reminder notification focuses/opens the app (see public/sw-notifications.js).
+        importScripts: ['sw-notifications.js'],
         // Take control of the first page load; later updates still wait for the user ("prompt").
         clientsClaim: true,
         // Weather is deliberately NOT cached by the worker: the app keeps it in IndexedDB so it can
