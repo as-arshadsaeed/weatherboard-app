@@ -978,9 +978,9 @@ Never claim a commit succeeded unless Git confirms it.
 
 ## 22. Implementation Status & Decisions (maintained during development)
 
-**Phase 1 — Foundation: complete and committed** on branch `feature/project-foundation` (not merged into `main`, not pushed). Phases 2–8 not started.
+**Phase 1 — Foundation: complete** (branch `feature/project-foundation`). **Phase 2 — Weather API: complete** (branch `feature/weather-api`, branched from the Phase 1 branch). Phases 3–8 not started. Neither branch is merged into `main`; merging needs explicit user approval. Push state is tracked by Git (`git branch -vv`), not by this file.
 
-Git state: `main` holds only the initial README commit; feature branches stay unmerged until approved. `origin` is configured but nothing has been pushed.
+Git state: `main` holds only the initial README commit.
 
 Decisions / deviations from the spec:
 
@@ -991,7 +991,14 @@ Decisions / deviations from the spec:
 - **Theme:** the toggle (scheduled for Phase 4) was implemented in Phase 1 (small and needed to verify dark tokens); Phase 4 only needs to confirm it. A pre-paint script in `index.html` prevents a flash; its storage key must match `THEME_STORAGE_KEY`.
 - **Search field:** `CitySearchPlaceholder` is deliberately disabled and inert until Phase 3.
 - **Animations:** CSS/SVG only; Lottie is not used unless a clear technical benefit appears.
-- **Not yet built:** unit toggle, settings access, favourites logic, all weather/API code, PWA, notifications.
+- **Phase 2 location entry point (temporary):** with no city search yet, a location is read from `?lat=&lon=&name=&country=&region=&tz=` by `parseCityFromSearch`. Out-of-range or non-numeric coordinates are passed to the service, which rejects them with "Weather data is unavailable for this location." and makes no request. Phase 3 replaces this with search; the parser can then be removed or kept as a deep-link.
+- **Weather service:** `services/weatherApi.ts` — 10 s timeout, caller-abort re-thrown (never shown as an error), specific messages per failure kind (`network`, `timeout`, `invalid-location`, `rate-limited`, `unavailable`, `bad-response`), and runtime validation so malformed payloads are never treated as weather. Data is always requested in °C and km/h; conversion to °F happens in `utils/temperature.ts`. The city's timezone is sent when known, otherwise `timezone=auto`.
+- **Data fetched but not yet displayed:** humidity, wind speed/direction, precipitation probability detail, sunrise and sunset are fetched and typed, but the detail cards belong to Phase 4. Precipitation probability is shown on forecast cards and is `null` (shown as "–") when the model has none, never an invented 0%.
+- **Units:** all UI is in °C for now (`unit="celsius"` in `App.tsx`); the conversion utility and components already accept `fahrenheit`. The toggle and persistence are Phase 4.
+- **Local time:** the "local time" clock is computed from the city's IANA timezone with `Intl` and refreshes every 30 s, independent of fetching.
+- **Weather icon animation:** CSS only (`--animate-weather-float` / `--animate-weather-spin` in `globals.css`), disabled by the global `prefers-reduced-motion` rule. Phase 7 may extend it.
+- **Testing notes:** unit tests mock `fetch`; Playwright intercepts the Open-Meteo URL **in tests only** (the app contains no mock data). `e2e/weather-live.spec.ts` hits the real API and is opt-in: `WEATHER_LIVE=1 npx playwright test e2e/weather-live.spec.ts --workers=1` (run serially: cold connections can exceed the 10 s timeout when parallel).
+- **Not yet built:** unit toggle, settings access, favourites logic, city search/geocoding, weather detail cards, PWA/offline caching, notifications.
 - **ESLint:** `react-refresh/only-export-components` is disabled for `src/components/ui/**` only (shadcn exports variant helpers beside components).
 - **Known advisory:** `npm audit` reports a moderate `minimatch` DoS advisory via ESLint tooling (dev-only, not shipped). The offered fix downgrades ESLint; revisit when upstream patches.
 

@@ -151,6 +151,28 @@
   --shadow-raised: var(--shadow-raised);
 }
 
+/* Weather icon motion. Disabled globally by the prefers-reduced-motion rule below. */
+@theme {
+  --animate-weather-float: weather-float 5s ease-in-out infinite;
+  --animate-weather-spin: weather-spin 48s linear infinite;
+
+  @keyframes weather-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+
+  @keyframes weather-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
