@@ -957,6 +957,19 @@ Do not use `git add .` blindly. Review and stage relevant files deliberately.
 - Do not automatically push to GitHub.
 - Ask for confirmation before pushing or merging if the operation affects a shared remote repository.
 
+### GitHub Push Strategy
+
+- Push each completed and tested development phase to GitHub.
+- Push the phase-specific feature branch, never directly to main.
+- Push only after all required tests and the production build pass.
+- Use `git push -u origin <feature-branch>` for the first push.
+- For subsequent updates, use `git push`.
+- Do not wait until all eight phases are complete before pushing.
+- Do not automatically merge feature branches into main.
+- Always obtain explicit user approval before merging into main.
+- After pushing, verify that the remote branch exists and report the GitHub branch name and latest commit hash.
+- If pushing fails, explain the error and do not claim the changes were uploaded.
+
 ### Required Completion Report
 
 After each commit, report:
