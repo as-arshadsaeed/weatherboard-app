@@ -20,7 +20,7 @@ export function formatLocalDate(date: Date, timezone?: string): string {
 
 /** e.g. "17:45" at the location. */
 export function formatLocalTime(date: Date, timezone?: string): string {
-  return formatInTimezone(date, timezone, { hour: '2-digit', minute: '2-digit' })
+  return formatInTimezone(date, timezone, { hour: 'numeric', minute: '2-digit' })
 }
 
 /** Parse a "YYYY-MM-DD" calendar date without timezone shifting. */
@@ -43,9 +43,19 @@ export function formatForecastShortDate(date: string): string {
   return format(parseCalendarDate(date), 'd MMM')
 }
 
-/** Time of day from a local ISO string such as "2026-11-12T07:13" → "07:13". */
-export function formatClockFromIso(value: string | null): string | null {
-  if (!value) return null
-  const match = /T(\d{2}:\d{2})/.exec(value)
-  return match?.[1] ?? null
+/**
+ * Wall-clock time of a local ISO string such as "2026-11-12T07:13", formatted like the live
+ * local-time clock. The digits are the city's own time, so they are formatted as-is (via UTC)
+ * with no timezone conversion. Returns null for missing or malformed values.
+ */
+export function formatLocalClock(value: string | null): string | null {
+  const match = value ? /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value) : null
+  if (!match) return null
+  const [, year, month, day, hour, minute] = match.map(Number)
+  const instant = new Date(Date.UTC(year!, month! - 1, day!, hour!, minute!))
+  return new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'UTC',
+  }).format(instant)
 }

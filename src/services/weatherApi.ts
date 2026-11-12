@@ -111,12 +111,14 @@ function parseCurrent(raw: unknown): CurrentConditions {
   if (!isRecord(raw) || typeof raw.time !== 'string') throw new WeatherApiError('bad-response')
   return {
     time: raw.time,
+    // Required: without these there is nothing meaningful to show.
     temperatureC: requireNumber(raw.temperature_2m),
-    apparentTemperatureC: requireNumber(raw.apparent_temperature),
-    humidityPercent: requireNumber(raw.relative_humidity_2m),
-    windSpeedKmh: requireNumber(raw.wind_speed_10m),
-    windDirectionDegrees: requireNumber(raw.wind_direction_10m),
     weatherCode: requireNumber(raw.weather_code),
+    // Optional: a missing value degrades to "Not available" instead of failing the whole report.
+    apparentTemperatureC: nullableNumber(raw.apparent_temperature),
+    humidityPercent: nullableNumber(raw.relative_humidity_2m),
+    windSpeedKmh: nullableNumber(raw.wind_speed_10m),
+    windDirectionDegrees: nullableNumber(raw.wind_direction_10m),
     isDay: requireNumber(raw.is_day) === 1,
   }
 }

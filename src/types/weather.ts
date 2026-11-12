@@ -4,10 +4,12 @@ export interface CurrentConditions {
   /** Observation time in the location's local time, e.g. "2026-11-12T17:45". */
   time: string
   temperatureC: number
-  apparentTemperatureC: number
-  humidityPercent: number
-  windSpeedKmh: number
-  windDirectionDegrees: number
+  /** The fields below can be missing from the API; the UI shows "Not available" for null. */
+  apparentTemperatureC: number | null
+  humidityPercent: number | null
+  windSpeedKmh: number | null
+  /** Meteorological direction the wind blows FROM, in degrees (0 = north). */
+  windDirectionDegrees: number | null
   weatherCode: number
   isDay: boolean
 }
