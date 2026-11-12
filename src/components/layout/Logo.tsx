@@ -6,11 +6,11 @@ export function Logo({ className }: { className?: string }) {
     <a
       href="/"
       className={cn(
-        'inline-flex items-center gap-2.5 rounded-lg font-semibold tracking-tight',
+        'inline-flex max-w-full items-center gap-2.5 rounded-lg font-semibold tracking-tight',
         className,
       )}
     >
-      <span className="grid size-8 place-items-center rounded-[0.6rem] bg-primary text-primary-foreground shadow-xs">
+      <span className="grid size-8 shrink-0 place-items-center rounded-[0.6rem] bg-primary text-primary-foreground shadow-xs">
         <svg viewBox="0 0 32 32" className="size-8" aria-hidden="true">
           <circle cx="20.5" cy="12.5" r="5.5" fill="var(--weather-sun)" />
           <path
@@ -19,7 +19,7 @@ export function Logo({ className }: { className?: string }) {
           />
         </svg>
       </span>
-      <span className="text-[1.0625rem]">WeatherBoard</span>
+      <span className="min-w-0 text-[1.0625rem] [overflow-wrap:anywhere]">WeatherBoard</span>
     </a>
   )
 }

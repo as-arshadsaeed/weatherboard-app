@@ -24,16 +24,16 @@ export function ForecastCard({ day, index, unit }: ForecastCardProps) {
   return (
     <li
       aria-label={formatForecastDayLong(day.date, index)}
-      className="flex min-h-[5.5rem] items-center gap-4 rounded-2xl border bg-card p-4 shadow-card lg:min-h-[15rem] lg:flex-col lg:justify-between lg:gap-3 lg:text-center"
+      className="flex min-h-[5.5rem] flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border bg-card p-4 shadow-card lg:min-h-[15rem] lg:flex-col lg:flex-nowrap lg:justify-between lg:gap-3 lg:text-center"
     >
       <div className="w-16 shrink-0 lg:w-auto">
         <p className="text-sm font-semibold">{formatForecastDay(day.date, index)}</p>
         <p className="text-xs text-muted-foreground">{formatForecastShortDate(day.date)}</p>
       </div>
 
-      <div className="flex min-w-0 flex-1 items-center gap-3 lg:flex-none lg:flex-col">
+      <div className="flex min-w-24 flex-1 items-center gap-3 lg:min-w-0 lg:flex-none lg:flex-col">
         <WeatherIcon code={day.weatherCode} size="sm" />
-        <p className="min-w-0 text-sm text-balance text-muted-foreground lg:min-h-10">
+        <p className="min-w-0 text-sm text-balance text-muted-foreground [overflow-wrap:anywhere] lg:min-h-10">
           {condition.label}
         </p>
       </div>

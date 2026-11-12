@@ -73,9 +73,9 @@ export function FavouriteCities({
                     selected && 'bg-accent shadow-[inset_3px_0_0_var(--brand)]',
                   )}
                 >
-                  <span className="block truncate text-sm font-medium">{city.name}</span>
+                  <span className="block [overflow-wrap:anywhere] text-sm font-medium">{city.name}</span>
                   {location && (
-                    <span className="block truncate text-xs text-muted-foreground">{location}</span>
+                    <span className="block [overflow-wrap:anywhere] text-xs text-muted-foreground">{location}</span>
                   )}
                 </button>
                 <Button

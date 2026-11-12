@@ -32,7 +32,7 @@ function DetailCard({ icon, label, value, spokenValue, note }: DetailCardProps) 
             <span aria-hidden={spokenValue ? 'true' : undefined}>{value}</span>
           </span>
         )}
-        {note && <span className="mt-0.5 block truncate text-xs text-muted-foreground">{note}</span>}
+        {note && <span className="mt-0.5 block [overflow-wrap:anywhere] text-xs text-muted-foreground">{note}</span>}
       </dd>
     </div>
   )

@@ -66,11 +66,11 @@ export function CurrentWeather({ city, report, unit, action }: CurrentWeatherPro
         <div className="min-w-0">
           <h1
             id="current-weather-heading"
-            className="truncate text-2xl font-semibold tracking-tight md:text-3xl"
+            className="text-2xl font-semibold tracking-tight [overflow-wrap:anywhere] md:text-3xl"
           >
             {city.name}
           </h1>
-          {place && <p className="mt-0.5 truncate text-sm text-muted-foreground">{place}</p>}
+          {place && <p className="mt-0.5 text-sm [overflow-wrap:anywhere] text-muted-foreground">{place}</p>}
           <p className="mt-2 text-sm text-muted-foreground">
             <time dateTime={now.toISOString()}>
               {formatLocalDate(now, timezone)} · {formatLocalTime(now, timezone)}
@@ -88,7 +88,7 @@ export function CurrentWeather({ city, report, unit, action }: CurrentWeatherPro
         />
       </div>
 
-      <div className="mt-6 flex items-center gap-4">
+      <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
         <WeatherIcon
           code={current.weatherCode}
           isDay={current.isDay}

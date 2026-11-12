@@ -48,9 +48,9 @@ export function SearchSuggestions({
           >
             <MapPin className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
             <span className="min-w-0">
-              <span className="block truncate text-sm font-medium">{city.name}</span>
+              <span className="block [overflow-wrap:anywhere] text-sm font-medium">{city.name}</span>
               {location && (
-                <span className="block truncate text-sm text-muted-foreground">{location}</span>
+                <span className="block [overflow-wrap:anywhere] text-sm text-muted-foreground">{location}</span>
               )}
             </span>
           </li>
