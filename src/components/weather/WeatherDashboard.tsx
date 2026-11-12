@@ -24,7 +24,7 @@ export function WeatherDashboard({ city, unit, action }: WeatherDashboardProps) 
   switch (state.status) {
     case 'idle':
     case 'loading':
-      return <WeatherSkeleton city={city} />
+      return <WeatherSkeleton city={city} reserveAction={action !== undefined} />
     case 'error':
       return <WeatherError city={city} error={state.error} onRetry={retry} />
     case 'success':
