@@ -233,12 +233,15 @@ test.describe('detail cards', () => {
   })
 
   test('missing values read "Not available" and never break the rest of the dashboard', async ({ page }) => {
-    const body = forecastBody() as ReturnType<typeof forecastBody> & Record<string, any>
-    body.current.relative_humidity_2m = null as never
-    body.current.wind_speed_10m = null as never
-    body.current.apparent_temperature = null as never
-    body.daily.precipitation_probability_max = [null, null, null, null, null] as never
-    body.daily.sunrise = ['', '', '', '', ''] as never
+    const body = forecastBody()
+    // Widen the types: the API can legally send null/empty for these fields.
+    const current: Record<string, unknown> = body.current
+    const daily: Record<string, unknown> = body.daily
+    current.relative_humidity_2m = null
+    current.wind_speed_10m = null
+    current.apparent_temperature = null
+    daily.precipitation_probability_max = [null, null, null, null, null]
+    daily.sunrise = ['', '', '', '', '']
     await page.route(API_GLOB, (route) => route.fulfill({ json: body }))
     await page.goto(LONDON_URL)
 
