@@ -1,0 +1,210 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* ==========================================================================
+   Design tokens
+   Components must use these semantic tokens (bg-card, text-muted-foreground…)
+   and never hardcode colours, so both themes stay consistent.
+   ========================================================================== */
+:root {
+  --radius: 0.875rem;
+
+  /* Surfaces */
+  --background: oklch(0.984 0.003 250);
+  --foreground: oklch(0.205 0.02 265);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.205 0.02 265);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.205 0.02 265);
+
+  /* Neutrals */
+  --muted: oklch(0.965 0.005 255);
+  --muted-foreground: oklch(0.48 0.02 260);
+  --secondary: oklch(0.955 0.006 255);
+  --secondary-foreground: oklch(0.25 0.02 265);
+  --accent: oklch(0.955 0.012 250);
+  --accent-foreground: oklch(0.25 0.02 265);
+  --border: oklch(0.915 0.006 255);
+  --input: oklch(0.89 0.008 255);
+
+  /* Actions */
+  --primary: oklch(0.21 0.02 265);
+  --primary-foreground: oklch(0.985 0 0);
+  --brand: oklch(0.54 0.19 250);
+  --brand-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.58 0.17 250);
+
+  /* Status (always paired with an icon or text, never colour alone) */
+  --destructive: oklch(0.53 0.21 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.5 0.14 155);
+  --warning: oklch(0.55 0.14 70);
+
+  /* Weather accents */
+  --weather-sun: oklch(0.78 0.16 75);
+  --weather-rain: oklch(0.6 0.15 245);
+  --weather-cloud: oklch(0.66 0.03 255);
+  --weather-storm: oklch(0.52 0.18 295);
+  --weather-snow: oklch(0.78 0.07 220);
+  --weather-night: oklch(0.45 0.15 275);
+
+  /* Elevation */
+  --shadow-color: 265 30% 12%;
+  --shadow-xs: 0 1px 2px hsl(var(--shadow-color) / 0.05);
+  --shadow-card:
+    0 1px 2px hsl(var(--shadow-color) / 0.04), 0 4px 16px -4px hsl(var(--shadow-color) / 0.06);
+  --shadow-raised:
+    0 2px 4px hsl(var(--shadow-color) / 0.05), 0 12px 32px -8px hsl(var(--shadow-color) / 0.12);
+
+  /* Page wash: a single faint, brand-tinted light from above */
+  --page-wash: oklch(0.54 0.19 250 / 0.07);
+}
+
+.dark {
+  --background: oklch(0.155 0.012 265);
+  --foreground: oklch(0.965 0.003 255);
+  --card: oklch(0.195 0.014 265);
+  --card-foreground: oklch(0.965 0.003 255);
+  --popover: oklch(0.215 0.015 265);
+  --popover-foreground: oklch(0.965 0.003 255);
+
+  --muted: oklch(0.235 0.014 265);
+  --muted-foreground: oklch(0.72 0.02 260);
+  --secondary: oklch(0.255 0.015 265);
+  --secondary-foreground: oklch(0.95 0.005 255);
+  --accent: oklch(0.275 0.025 255);
+  --accent-foreground: oklch(0.96 0.004 255);
+  --border: oklch(1 0 0 / 0.09);
+  --input: oklch(1 0 0 / 0.13);
+
+  --primary: oklch(0.965 0.003 255);
+  --primary-foreground: oklch(0.2 0.02 265);
+  --brand: oklch(0.72 0.14 250);
+  --brand-foreground: oklch(0.17 0.02 265);
+  --ring: oklch(0.7 0.15 250);
+
+  --destructive: oklch(0.7 0.19 25);
+  --destructive-foreground: oklch(0.17 0.02 265);
+  --success: oklch(0.75 0.15 155);
+  --warning: oklch(0.8 0.14 80);
+
+  --weather-sun: oklch(0.84 0.15 85);
+  --weather-rain: oklch(0.72 0.13 245);
+  --weather-cloud: oklch(0.72 0.03 255);
+  --weather-storm: oklch(0.7 0.16 295);
+  --weather-snow: oklch(0.86 0.06 220);
+  --weather-night: oklch(0.68 0.14 275);
+
+  --shadow-color: 0 0% 0%;
+  --shadow-xs: 0 1px 2px hsl(var(--shadow-color) / 0.3);
+  --shadow-card: 0 1px 2px hsl(var(--shadow-color) / 0.3), 0 8px 24px -8px hsl(var(--shadow-color) / 0.45);
+  --shadow-raised: 0 2px 4px hsl(var(--shadow-color) / 0.35), 0 16px 40px -8px hsl(var(--shadow-color) / 0.55);
+
+  --page-wash: oklch(0.72 0.14 250 / 0.1);
+}
+
+@theme inline {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
+  --color-weather-sun: var(--weather-sun);
+  --color-weather-rain: var(--weather-rain);
+  --color-weather-cloud: var(--weather-cloud);
+  --color-weather-storm: var(--weather-storm);
+  --color-weather-snow: var(--weather-snow);
+  --color-weather-night: var(--weather-night);
+
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  --shadow-xs: var(--shadow-xs);
+  --shadow-card: var(--shadow-card);
+  --shadow-raised: var(--shadow-raised);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    min-height: 100dvh;
+    background-image: radial-gradient(
+      60rem 28rem at 50% -12rem,
+      var(--page-wash),
+      transparent 70%
+    );
+    background-repeat: no-repeat;
+    font-feature-settings:
+      'cv11' 1,
+      'ss03' 1;
+    /* Guard against unintended horizontal page scrolling */
+    overflow-x: clip;
+  }
+
+  /* One consistent, always-visible keyboard focus treatment */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--brand) 25%, transparent);
+  }
+
+  /* Numbers line up in columns and don't jitter while values change */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Respect the user's motion preference everywhere (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

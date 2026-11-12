@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="WeatherBoard: live weather, five-day forecasts and favourite cities."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <title>WeatherBoard</title>
+    <script>
+      // Apply the saved/OS theme before first paint to avoid a flash of the wrong theme.
+      // Storage key must match THEME_STORAGE_KEY in src/hooks/useTheme.ts.
+      try {
+        var saved = JSON.parse(localStorage.getItem('weatherboard:theme'));
+        var dark =
+          saved === 'dark' ||
+          (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) document.documentElement.classList.add('dark');
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
