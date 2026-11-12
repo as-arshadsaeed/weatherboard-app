@@ -37,11 +37,18 @@ test.describe('reduced motion', () => {
 test.describe('motion is allowed by default', () => {
   test.use({ viewport: { width: 1280, height: 800 }, reducedMotion: 'no-preference' })
 
-  test('the weather icon animates, which is what the reduced-motion test switches off', async ({ page, context }) => {
+  test('the weather icons animate, which is what the reduced-motion tests switch off', async ({ page, context }) => {
     await STATES.find((s) => s.name === 'weather loaded')!.setup(page, context)
-    const animated = await page.evaluate(() =>
-      [...document.querySelectorAll('*')].some((el) => getComputedStyle(el).animationName.startsWith('weather-')),
-    )
-    expect(animated).toBe(true)
+    await expect(page.locator('main [data-weather-icon]:visible .lottie-icon svg')).toHaveCount(6)
+  })
+})
+
+test.describe('reduced motion and the weather icons', () => {
+  test.use({ viewport: { width: 1280, height: 800 }, reducedMotion: 'reduce' })
+
+  test('no animation is drawn, so none can keep moving', async ({ page, context }) => {
+    await STATES.find((s) => s.name === 'weather loaded')!.setup(page, context)
+    await expect(page.locator('main [data-weather-icon]:visible svg.lucide')).toHaveCount(6)
+    await expect(page.locator('.lottie-icon')).toHaveCount(0)
   })
 })

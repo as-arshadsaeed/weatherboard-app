@@ -204,14 +204,14 @@ test.describe('accessibility', () => {
     await expect(page.getByText('82 percent chance of precipitation')).toBeVisible()
   })
 
-  test('animation is disabled when the user prefers reduced motion', async ({ page }) => {
+  test('icons are static when the user prefers reduced motion', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await mockWeather(page)
     await page.goto(LONDON_URL)
-    const icon = page.locator('main svg.animate-weather-float, main svg.animate-weather-spin').first()
-    await expect(icon).toBeVisible()
-    const duration = await icon.evaluate((el) => getComputedStyle(el).animationDuration)
-    expect(parseFloat(duration)).toBeLessThan(0.01)
+    await expect(page.getByRole('heading', { level: 1, name: 'London' })).toBeVisible()
+    const staticIcon = page.locator('main [data-weather-icon] svg.lucide:visible').first()
+    await expect(staticIcon).toBeVisible()
+    await expect(page.locator('main .lottie-icon')).toHaveCount(0)
   })
 })
 

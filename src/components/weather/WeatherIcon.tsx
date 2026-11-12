@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Cloud,
   CloudDrizzle,
@@ -15,6 +16,9 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 
+import { WeatherAnimation } from '@/components/weather/WeatherAnimation'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { hasWeatherAnimation } from '@/services/weatherAnimations'
 import { describeWeather, type WeatherIconName, type WeatherTone } from '@/utils/weatherCodes'
 import { cn } from '@/utils/cn'
 
@@ -44,38 +48,65 @@ const TONES: Record<WeatherTone, string> = {
   storm: 'bg-weather-storm/15 text-weather-storm',
 }
 
+// The animation is drawn a little larger than the static glyph: its artwork has built-in padding.
 const SIZES = {
-  sm: { tile: 'size-11 rounded-xl', icon: 'size-6' },
-  lg: { tile: 'size-20 rounded-3xl', icon: 'size-11' },
+  sm: { tile: 'size-11 rounded-xl', icon: 'size-6', animation: 'size-9' },
+  lg: { tile: 'size-20 rounded-3xl', icon: 'size-11', animation: 'size-16' },
 } as const
 
 interface WeatherIconProps {
   code: number
   isDay?: boolean
   size?: keyof typeof SIZES
-  /** Gentle CSS motion; automatically disabled for users who prefer reduced motion. */
+  /** Show the Lottie animation. Always off for users who prefer reduced motion. Defaults to on. */
   animated?: boolean
   className?: string
 }
 
-/** Decorative weather glyph. The condition is always also stated in text next to it. */
+/**
+ * Decorative weather glyph; the condition is always also stated in text next to it, so the whole thing is
+ * hidden from assistive technology. The tile has a fixed size and the static icon is drawn first, so nothing
+ * shifts while the animation loads, and it stays as the fallback if the animation cannot be shown.
+ */
 export function WeatherIcon({
   code,
   isDay = true,
   size = 'sm',
-  animated = false,
+  animated = true,
   className,
 }: WeatherIconProps) {
   const { icon, tone } = describeWeather(code, isDay)
-  const Icon = ICONS[icon]
-  const motion = animated ? (icon === 'sun' ? 'animate-weather-spin' : 'animate-weather-float') : ''
+  const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
+  const showAnimation = animated && !prefersReducedMotion && hasWeatherAnimation(icon)
 
   return (
     <span
       aria-hidden="true"
+      data-weather-icon={icon}
       className={cn('grid shrink-0 place-items-center', SIZES[size].tile, TONES[tone], className)}
     >
-      <Icon className={cn(SIZES[size].icon, motion)} strokeWidth={1.75} />
+      {/* Keyed by icon so a new condition starts again from the static glyph. */}
+      {showAnimation ? (
+        <AnimatedGlyph key={icon} name={icon} size={size} />
+      ) : (
+        <StaticGlyph name={icon} size={size} />
+      )}
     </span>
+  )
+}
+
+function StaticGlyph({ name, size, hidden = false }: { name: WeatherIconName; size: keyof typeof SIZES; hidden?: boolean }) {
+  const Icon = ICONS[name]
+  return <Icon className={cn(SIZES[size].icon, hidden && 'hidden')} strokeWidth={1.75} />
+}
+
+/** Static glyph until the animation is on screen; back to the glyph if it fails. */
+function AnimatedGlyph({ name, size }: { name: WeatherIconName; size: keyof typeof SIZES }) {
+  const [shown, setShown] = useState(false)
+  return (
+    <>
+      <StaticGlyph name={name} size={size} hidden={shown} />
+      <WeatherAnimation name={name} onStatusChange={setShown} className={cn(SIZES[size].animation, !shown && 'hidden')} />
+    </>
   )
 }

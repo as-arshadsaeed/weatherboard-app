@@ -83,7 +83,6 @@ export function CurrentWeather({ city, report, unit, action }: CurrentWeatherPro
           code={current.weatherCode}
           isDay={current.isDay}
           size="lg"
-          animated
           className="hidden sm:grid"
         />
       </div>
@@ -93,7 +92,6 @@ export function CurrentWeather({ city, report, unit, action }: CurrentWeatherPro
           code={current.weatherCode}
           isDay={current.isDay}
           size="lg"
-          animated
           className="sm:hidden"
         />
         <div>
