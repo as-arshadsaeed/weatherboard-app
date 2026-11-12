@@ -5,6 +5,7 @@ import { FavouriteCities } from '@/components/favourites/FavouriteCities'
 import { Header } from '@/components/layout/Header'
 import { MobileNavigation, type MobileView } from '@/components/layout/MobileNavigation'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { OfflineBanner } from '@/components/layout/OfflineBanner'
 import { OfflineReadyNotice } from '@/components/layout/OfflineReadyNotice'
 import { StorageNotice } from '@/components/layout/StorageNotice'
 import { UpdatePrompt } from '@/components/layout/UpdatePrompt'
@@ -83,7 +84,8 @@ export default function App() {
       </a>
       <Header onSelectCity={showCity} unit={unit} onUnitChange={setUnit} />
       <div className="mx-auto grid max-w-[88rem] gap-6 px-4 pt-6 pb-24 md:grid-cols-[15rem_minmax(0,1fr)] md:px-6 md:py-8 xl:grid-cols-[18rem_minmax(0,1fr)]">
-        <div className="min-w-0 space-y-6 md:col-span-2 empty:hidden">
+        <div className="min-w-0 space-y-6 md:order-first md:col-span-2 empty:hidden">
+          <OfflineBanner />
           <UpdatePrompt />
           <OfflineReadyNotice />
           <StorageNotice />
