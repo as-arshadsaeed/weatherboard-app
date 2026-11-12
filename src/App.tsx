@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { FavouriteButton } from '@/components/favourites/FavouriteButton'
 import { FavouriteCities } from '@/components/favourites/FavouriteCities'
 import { Header } from '@/components/layout/Header'
+import { MobileNavigation, type MobileView } from '@/components/layout/MobileNavigation'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { StorageNotice } from '@/components/layout/StorageNotice'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -13,6 +14,7 @@ import { useSelectedCity } from '@/hooks/useSelectedCity'
 import { useUnits } from '@/hooks/useUnits'
 import { probeStorage } from '@/services/storageService'
 import type { City } from '@/types/city'
+import { cn } from '@/utils/cn'
 import { formatLocation } from '@/utils/city'
 
 export default function App() {
@@ -24,6 +26,28 @@ export default function App() {
   const [removal, setRemoval] = useState<{ city: City; open: boolean } | null>(null)
   const requestRemoval = (city: City) => setRemoval({ city, open: true })
   const cancelRemoval = () => setRemoval((current) => current && { ...current, open: false })
+
+  // Phones show one view at a time (Weather or Favourites); tablet and up show both side by side.
+  const [view, setView] = useState<MobileView>('weather')
+  const mainRef = useRef<HTMLElement>(null)
+
+  /** Choose a city from anywhere (search or favourites) and go to its weather. */
+  const showCity = (next: City) => {
+    selectCity(next)
+    setView('weather')
+    // If the control that was just used is no longer visible (the Favourites view hid), move focus to
+    // the weather instead of leaving it on a hidden element.
+    requestAnimationFrame(() => {
+      const active = document.activeElement
+      const lost = !active || active === document.body || active.checkVisibility?.() === false
+      if (lost) mainRef.current?.focus({ preventScroll: true })
+    })
+  }
+
+  const changeView = (next: MobileView) => {
+    setView(next)
+    document.documentElement.scrollTop = 0
+  }
 
   // Find out up front whether we can save anything, so the notice does not wait for a failed save.
   useEffect(() => probeStorage(), [])
@@ -49,16 +73,23 @@ export default function App() {
     <>
       <a
         href="#main"
+        // On a phone's Favourites view <main> is hidden, so make it the visible target first.
+        onClick={() => setView('weather')}
         className="sr-only z-50 rounded-lg bg-primary px-4 py-2 text-primary-foreground focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
       >
         Skip to main content
       </a>
-      <Header onSelectCity={selectCity} unit={unit} onUnitChange={setUnit} />
-      <div className="mx-auto grid max-w-[88rem] gap-6 px-4 py-6 md:grid-cols-[15rem_minmax(0,1fr)] md:px-6 md:py-8 xl:grid-cols-[18rem_minmax(0,1fr)]">
+      <Header onSelectCity={showCity} unit={unit} onUnitChange={setUnit} />
+      <div className="mx-auto grid max-w-[88rem] gap-6 px-4 pt-6 pb-24 md:grid-cols-[15rem_minmax(0,1fr)] md:px-6 md:py-8 xl:grid-cols-[18rem_minmax(0,1fr)]">
         <div className="min-w-0 space-y-6 md:col-span-2 empty:hidden">
           <StorageNotice />
         </div>
-        <main id="main" tabIndex={-1} className="min-w-0 outline-none">
+        <main
+          id="main"
+          ref={mainRef}
+          tabIndex={-1}
+          className={cn('min-w-0 outline-none', view !== 'weather' && 'hidden md:block')}
+        >
           {city ? (
             <WeatherDashboard
               city={city}
@@ -77,15 +108,20 @@ export default function App() {
             <NoCitySelected />
           )}
         </main>
-        <Sidebar>
+        <Sidebar className={cn(view !== 'favourites' && 'hidden md:block')}>
           <FavouriteCities
             favourites={favourites.favourites}
             selectedCity={city}
-            onSelect={selectCity}
+            onSelect={showCity}
             onRequestRemove={requestRemoval}
           />
         </Sidebar>
       </div>
+      <MobileNavigation
+        view={view}
+        onChange={changeView}
+        favouriteCount={favourites.favourites.length}
+      />
       <ConfirmDialog
         open={removal?.open ?? false}
         title={removing ? `Remove ${removing.name} from favourites?` : 'Remove favourite?'}

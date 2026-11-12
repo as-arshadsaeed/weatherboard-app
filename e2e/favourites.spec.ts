@@ -1,64 +1,19 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import { GEODB_GLOB, GEOCODING_GLOB, openMeteoGeocodingBody } from './support/geocoding.ts'
 import {
-  geoDbBody,
-  geoDbCity,
-  GEODB_GLOB,
-  GEOCODING_GLOB,
-  openMeteoGeocodingBody,
-} from './support/geocoding.ts'
-import { API_GLOB, forecastBody } from './support/openMeteo.ts'
-
-const LONDON = geoDbCity(1, 'London', 'England', 'United Kingdom', 51.5085, -0.1257)
-const PARIS = geoDbCity(2, 'Paris', 'Île-de-France', 'France', 48.8534, 2.3488)
-const TOKYO = geoDbCity(3, 'Tokyo', 'Tokyo', 'Japan', 35.6895, 139.6917)
-const BERLIN = geoDbCity(4, 'Berlin', 'Berlin', 'Germany', 52.52, 13.405)
-const MADRID = geoDbCity(5, 'Madrid', 'Madrid', 'Spain', 40.4168, -3.7038)
-const ROME = geoDbCity(6, 'Rome', 'Lazio', 'Italy', 41.9028, 12.4964)
-const BY_PREFIX: Record<string, unknown> = { lon: LONDON, par: PARIS, tok: TOKYO, ber: BERLIN, mad: MADRID, rom: ROME }
-
-const asFavourite = (c: ReturnType<typeof geoDbCity>) => ({
-  id: `geodb:${c.id}`,
-  name: c.name,
-  region: c.region,
-  country: c.country,
-  latitude: c.latitude,
-  longitude: c.longitude,
-})
-
-const searchBox = (page: Page) => page.getByRole('combobox', { name: 'Search for a city' })
-const panel = (page: Page) => page.getByRole('region', { name: 'Favourites' })
-
-/** Intercept the forecast and GeoDB (one city per 3-letter prefix); returns the forecast URLs requested. */
-async function mockApis(page: Page) {
-  const forecasts: string[] = []
-  await page.route(API_GLOB, (route) => {
-    forecasts.push(route.request().url())
-    return route.fulfill({ json: forecastBody() })
-  })
-  await page.route(GEODB_GLOB, (route) => {
-    const prefix = (new URL(route.request().url()).searchParams.get('namePrefix') ?? '').toLowerCase().slice(0, 3)
-    const hit = BY_PREFIX[prefix]
-    return route.fulfill({ json: geoDbBody(hit ? [hit] : []) })
-  })
-  return forecasts
-}
-
-/** Seed localStorage once (never overwriting what the app has saved since, e.g. across reloads). */
-async function seed(page: Page, key: string, value: unknown) {
-  await page.addInitScript(
-    ([k, v]) => {
-      if (localStorage.getItem(k) === null) localStorage.setItem(k, v)
-    },
-    [`weatherboard:${key}`, typeof value === 'string' ? value : JSON.stringify(value)] as const,
-  )
-}
-
-async function search(page: Page, text: string, optionName: RegExp) {
-  await searchBox(page).fill(text)
-  await page.getByRole('option', { name: optionName }).click()
-  await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
-}
+  asFavourite,
+  BERLIN,
+  LONDON,
+  MADRID,
+  mockApis,
+  panel,
+  PARIS,
+  search,
+  searchBox,
+  seed,
+  TOKYO,
+} from './support/app.ts'
 
 function trackErrors(page: Page): string[] {
   const errors: string[] = []
@@ -77,7 +32,7 @@ test.describe('adding, switching and persisting', () => {
 
     await search(page, 'lon', /London/)
     await page.getByRole('button', { name: 'Add to favourites' }).click()
-    await expect(page.getByRole('button', { name: 'Saved' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible()
     await expect(panel(page).getByRole('button', { name: /^London/ })).toBeVisible()
     await expect(panel(page).getByLabel('1 of 5 favourites saved')).toBeVisible()
 
@@ -89,7 +44,7 @@ test.describe('adding, switching and persisting', () => {
     await expect(panel(page).getByRole('listitem')).toHaveCount(2)
     await expect(page.getByRole('heading', { level: 1, name: 'Paris' })).toBeVisible() // last selected city restored
     await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Saved' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible()
     expect(forecasts.length).toBeGreaterThanOrEqual(3)
     expect(errors).toEqual([])
   })
@@ -139,7 +94,7 @@ test.describe('adding, switching and persisting', () => {
     await page.goto('/')
 
     await search(page, 'lon', /London/)
-    await expect(page.getByRole('button', { name: 'Saved' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Add to favourites' })).toHaveCount(0)
     await expect(panel(page).getByRole('listitem')).toHaveCount(1)
   })
@@ -256,7 +211,7 @@ test.describe('removing a favourite: the confirmation dialog in a real browser',
   test('removing from the weather card’s Saved button asks first and returns focus to it', async ({ page }) => {
     await panel(page).getByRole('button', { name: /^Paris/ }).click()
     await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
-    await page.getByRole('button', { name: 'Saved' }).click()
+    await page.getByRole('button', { name: 'Saved', exact: true }).click()
     await expect(page.getByRole('alertdialog', { name: 'Remove Paris from favourites?' })).toBeVisible()
     await page.getByRole('button', { name: 'Remove', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Add to favourites' })).toBeVisible()
@@ -331,8 +286,13 @@ for (const vp of [
         if (mode === 'dark') await page.getByRole('button', { name: /switch to dark/i }).click()
         await expect(page.locator('html')).toHaveClass(mode === 'dark' ? /dark/ : /^(?!.*dark)/)
 
+        // On phones the favourites live behind the bottom tab; from tablet up the sidebar is always visible.
+        const openFavourites = async () => {
+          if (vp.width < 768) await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: /^Favourites/ }).click()
+        }
+        await openFavourites()
         await panel(page).getByRole('button', { name: /^Tokyo/ }).click()
-        await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+        await expect(page.getByLabel('7 degrees Celsius')).toBeVisible() // chosen city → weather view
 
         const noOverflow = async () => {
           const { sw, cw } = await page.evaluate(() => ({
@@ -344,17 +304,17 @@ for (const vp of [
         await noOverflow()
 
         // Touch targets on the panel and the save button.
+        const expectTouchTarget = async (target: ReturnType<Page['getByRole']>) => {
+          await target.scrollIntoViewIfNeeded()
+          const box = (await target.boundingBox())!
+          expect(box.height, 'touch target height').toBeGreaterThanOrEqual(44)
+          expect(box.width, 'touch target width').toBeGreaterThanOrEqual(44)
+        }
+        if (vp.width < 768) await expectTouchTarget(page.getByRole('button', { name: 'Saved', exact: true }))
+        await openFavourites()
         if (vp.width < 768) {
-          for (const target of [
-            panel(page).getByRole('button', { name: /^Tokyo/ }),
-            panel(page).getByRole('button', { name: 'Remove Tokyo from favourites' }),
-            page.getByRole('button', { name: 'Saved' }),
-          ]) {
-            await target.scrollIntoViewIfNeeded()
-            const box = (await target.boundingBox())!
-            expect(box.height, 'touch target height').toBeGreaterThanOrEqual(44)
-            expect(box.width, 'touch target width').toBeGreaterThanOrEqual(44)
-          }
+          await expectTouchTarget(panel(page).getByRole('button', { name: /^Tokyo/ }))
+          await expectTouchTarget(panel(page).getByRole('button', { name: 'Remove Tokyo from favourites' }))
         }
 
         await panel(page).getByRole('button', { name: 'Remove Tokyo from favourites' }).click()

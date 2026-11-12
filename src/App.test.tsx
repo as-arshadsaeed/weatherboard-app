@@ -206,4 +206,62 @@ describe('dashboard shell', () => {
       expect(screen.getByRole('button', { name: 'Fahrenheit (°F)' })).toHaveAttribute('aria-pressed', 'true')
     })
   })
+
+  describe('responsive navigation (class-level; real visibility is verified in Playwright)', () => {
+    it('shows the weather view by default: sidebar hidden below md, main visible', () => {
+      render(<App />)
+      expect(screen.getByRole('main')).not.toHaveClass('hidden')
+      expect(screen.getByRole('complementary', { name: 'Saved cities', hidden: true })).toHaveClass('hidden', 'md:block')
+      expect(screen.getByRole('button', { name: 'Weather' })).toHaveAttribute('aria-current', 'page')
+    })
+
+    it('the Favourites tab swaps the views, and Weather swaps them back', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      await user.click(screen.getByRole('button', { name: 'Favourites' }))
+      expect(screen.getByRole('main', { hidden: true })).toHaveClass('hidden', 'md:block')
+      expect(screen.getByRole('complementary', { name: 'Saved cities' })).not.toHaveClass('hidden')
+      expect(screen.getByRole('button', { name: 'Favourites' })).toHaveAttribute('aria-current', 'page')
+
+      await user.click(screen.getByRole('button', { name: 'Weather' }))
+      expect(screen.getByRole('main')).not.toHaveClass('hidden')
+    })
+
+    it('choosing a favourite returns to the weather view and loads that city', async () => {
+      const user = userEvent.setup()
+      window.localStorage.setItem(
+        'weatherboard:favourites',
+        JSON.stringify([{ id: 'x', name: 'Paris', latitude: 48.85, longitude: 2.35 }]),
+      )
+      vi.stubGlobal('fetch', vi.fn().mockImplementation(() => Promise.resolve(jsonResponse(buildForecastResponse()))))
+      render(<App />)
+
+      await user.click(screen.getByRole('button', { name: /^Favourites/ }))
+      await user.click(within(screen.getByRole('complementary')).getByRole('button', { name: /^Paris/ }))
+
+      expect(screen.getByRole('main')).not.toHaveClass('hidden')
+      expect(screen.getByRole('button', { name: /^Favourites/ })).not.toHaveAttribute('aria-current')
+      expect(await screen.findByLabelText('7 degrees Celsius')).toBeVisible()
+    })
+
+    it('the skip link makes the weather view visible first', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      await user.click(screen.getByRole('button', { name: 'Favourites' }))
+      await user.click(screen.getByRole('link', { name: 'Skip to main content' }))
+      expect(screen.getByRole('main')).not.toHaveClass('hidden')
+    })
+
+    it('shows the number of saved favourites on the tab', () => {
+      window.localStorage.setItem(
+        'weatherboard:favourites',
+        JSON.stringify([
+          { id: 'a', name: 'A', latitude: 1, longitude: 1 },
+          { id: 'b', name: 'B', latitude: 20, longitude: 20 },
+        ]),
+      )
+      render(<App />)
+      expect(screen.getByRole('button', { name: 'Favourites, 2 of 5 saved' })).toBeVisible()
+    })
+  })
 })
