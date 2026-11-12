@@ -19,7 +19,7 @@ interface HeaderProps {
  */
 export function Header({ onSelectCity, unit, onUnitChange, onOpenSettings }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md">
+    <header className="short:static sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-[88rem] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 md:h-16 md:flex-nowrap md:gap-x-6 md:px-6 md:py-0">
         <Logo className="order-1 md:order-none md:w-[calc(15rem-0.5rem)] xl:w-[calc(18rem-0.5rem)]" />
         <CitySearch

@@ -2,6 +2,8 @@
 @import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
+/* Landscape phones and other short windows: fixed bars would take too much of the screen. */
+@custom-variant short (@media (max-height: 32rem));
 
 /* ==========================================================================
    Design tokens
@@ -181,6 +183,31 @@
   html {
     color-scheme: light;
     -webkit-text-size-adjust: 100%;
+    /* Keep focused elements and anchor targets clear of the sticky header (two rows on phones) and the
+       fixed bottom tab bar (phones only), so focus is never hidden behind them (WCAG 2.4.11). */
+    scroll-padding-top: 8.5rem;
+    scroll-padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+
+  @media (min-width: 48rem) {
+    html {
+      scroll-padding-top: 5rem;
+      scroll-padding-bottom: 1.5rem;
+    }
+  }
+
+  /* The header scrolls away on short viewports, so only breathing room is needed there. */
+  @media (max-height: 32rem) {
+    html {
+      scroll-padding-top: 1rem;
+    }
+  }
+
+  /* While a modal dialog is open the page behind it must not scroll. The stable gutter stops the layout
+     jumping when the scrollbar disappears. */
+  html:has(dialog[open]) {
+    overflow: hidden;
+    scrollbar-gutter: stable;
   }
 
   html.dark {
