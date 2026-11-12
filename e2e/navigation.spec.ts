@@ -102,13 +102,14 @@ test.describe('phone (375px): bottom tab bar', () => {
   test('the skip link still works from the Favourites view', async ({ page }) => {
     await setup(page)
     await tab(page, /^Favourites/).click()
-    await page.keyboard.press('Tab') // first stop after clicking a tab is later in the page; reset to the top
-    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
-    await page.keyboard.press('Tab')
+    await expect(main(page)).toBeHidden()
+    // <main> is hidden here, so activating the skip link must first make it visible.
     const skip = page.getByRole('link', { name: 'Skip to main content' })
-    await expect(skip).toBeFocused()
+    await skip.focus()
+    await expect(skip).toBeVisible()
     await page.keyboard.press('Enter')
     await expect(main(page)).toBeVisible()
+    await expect(panel(page)).toBeHidden()
   })
 
   test('the bar never hides content: the last line stays reachable above it', async ({ page }) => {
