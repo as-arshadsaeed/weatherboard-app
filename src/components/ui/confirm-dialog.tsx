@@ -1,6 +1,7 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useId, useRef, type ReactNode } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { Dialog } from '@/components/ui/dialog'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -13,9 +14,8 @@ interface ConfirmDialogProps {
 }
 
 /**
- * Accessible modal confirmation built on the native <dialog>: showModal() makes the rest of the page
- * inert, traps focus, closes on Escape and restores focus to the opener. It is an alertdialog, labelled
- * and described, and focus starts on the safe (cancel) action. A click on the backdrop cancels.
+ * Accessible confirmation: an alertdialog labelled by its title and described by its message. Focus
+ * starts on the safe (cancel) action; Escape and a backdrop click cancel.
  */
 export function ConfirmDialog({
   open,
@@ -26,38 +26,19 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
   const cancelRef = useRef<HTMLButtonElement>(null)
   const titleId = useId()
   const descriptionId = useId()
 
-  // Keep the native dialog in sync with the `open` prop.
-  useEffect(() => {
-    const dialog = dialogRef.current
-    if (!dialog) return
-    if (open && !dialog.open) {
-      dialog.showModal()
-      cancelRef.current?.focus()
-    } else if (!open && dialog.open) {
-      dialog.close()
-    }
-  }, [open])
-
   return (
-    <dialog
-      ref={dialogRef}
+    <Dialog
+      open={open}
+      onClose={onCancel}
       role="alertdialog"
-      aria-labelledby={titleId}
-      aria-describedby={descriptionId}
-      // Escape: let our state own closing so the prop and the DOM never disagree.
-      onCancel={(event) => {
-        event.preventDefault()
-        onCancel()
-      }}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onCancel()
-      }}
-      className="m-auto w-[min(26rem,calc(100vw-2rem))] rounded-2xl border bg-popover p-0 text-popover-foreground shadow-raised backdrop:bg-black/50"
+      labelledBy={titleId}
+      describedBy={descriptionId}
+      initialFocusRef={cancelRef}
+      className="w-[min(26rem,calc(100vw-2rem))]"
     >
       <div className="p-6">
         <h2 id={titleId} className="text-lg font-semibold tracking-tight text-balance">
@@ -75,6 +56,6 @@ export function ConfirmDialog({
           </Button>
         </div>
       </div>
-    </dialog>
+    </Dialog>
   )
 }

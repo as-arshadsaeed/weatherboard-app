@@ -3,9 +3,9 @@
 A responsive, installable weather dashboard PWA: city search, current conditions, 5-day forecast,
 favourite cities, offline access, daily reminders, light/dark themes and °C/°F.
 
-> **Status: Phase 5 of 8 complete** (foundation, live weather, city search, favourites and
-> settings, installable PWA with offline weather). Notifications, polish and deployment are not built
-> yet — see [CLAUDE.md](CLAUDE.md) for the spec and phase plan. There is no mock weather data in the app.
+> **Status: Phase 6 of 8 complete** (foundation, live weather, city search, favourites and settings,
+> installable PWA with offline weather, daily reminders). Polish and deployment are not built yet — see
+> [CLAUDE.md](CLAUDE.md) for the spec and phase plan. There is no mock weather data in the app.
 
 ## Requirements
 
@@ -89,6 +89,7 @@ bottom bar switches between **Weather** and **Favourites**; choosing a city retu
 | `weatherboard:selectedCity` | The city last shown (restored on reload)   |
 | `weatherboard:unit`         | `celsius` or `fahrenheit`                  |
 | `weatherboard:theme`        | `light` or `dark` (absent = follow the OS) |
+| `weatherboard:reminder`     | `{ enabled, time: "HH:mm", lastFiredOn }`     |
 
 Saved weather is not in localStorage: it is in the `weatherboard` IndexedDB database.
 
@@ -121,6 +122,65 @@ unreadable responses are never saved. Old data (over 7 days) and damaged records
 ready — Reload / Later"; nothing reloads unexpectedly, and your favourites, settings and saved weather are
 kept. (The service worker deliberately does **not** cache weather: it would serve stale forecasts as if they
 were live, so saved weather lives in the app with its age instead.)
+
+## Daily weather reminders
+
+Open **Settings** (the gear in the header on tablet and desktop; the **Settings** tab at the bottom on
+phones) to turn on a daily morning reminder.
+
+- **Switch** the reminder on or off, and choose a **time** between 5:00 AM and 11:59 AM. An invalid or empty
+  time is rejected with a message and is not saved. Your choices are remembered.
+- The reminder shows the weather for **the city you are viewing when it fires**, in **your selected unit**
+  (for example "Partly cloudy, 7°C, feels like 3°C. Today: high 8°C, low 5°C, 0% chance of precipitation.").
+  If the forecast can't be fetched it uses your saved forecast and says so; if there is none it does not invent
+  weather.
+- **Permission.** Turning the reminder on shows: "We'd like to send you a daily morning reminder to check your
+  local weather, so you can plan your day." The browser is asked **only when you press "Allow notifications"** —
+  never on page load, never when you open Settings, never just because you turned the reminder on. Allowed,
+  blocked (with how to change it), not asked yet, and "not supported" each have a clear message, and the reminder
+  still appears inside WeatherBoard in all of them. A denied or unsupported browser never affects the dashboard.
+- **How a reminder arrives.** It always appears as a banner inside WeatherBoard. If notifications are allowed and
+  the app is open in a background tab or window, it also becomes a system notification (clicking it brings
+  WeatherBoard to the front). "Send a test reminder" shows exactly what one looks like.
+
+### Reminders only work while WeatherBoard is open
+
+This version is client-side only, so **a reminder can only appear while WeatherBoard is open** in a browser tab
+or an installed app window. It **cannot** send a reminder when the browser or app is closed, and nothing in the
+page or its service worker can change that. If the app isn't open at your reminder time, or within 30 minutes
+after it, you won't get that day's reminder: it is skipped, never sent late. (The check runs every 30 seconds
+and again when the tab regains focus, becomes visible or comes back online, because background tabs are
+throttled and laptops sleep.)
+
+### What real background notifications would need
+
+Delivering a reminder to a closed browser requires **Web Push**, which needs infrastructure this project
+deliberately does not have yet:
+
+1. **A push subscription** per device, created in the browser with `registration.pushManager.subscribe()`.
+2. **A VAPID key pair**: the public key goes in the app; the private key must stay secret on a server (it
+   cannot live in a client bundle).
+3. **A push service**, which is the browser vendor's (Google, Mozilla or Apple) and is reached through the
+   subscription's endpoint.
+4. **A server-side sender** that signs and sends each message (for example the `web-push` library).
+5. **Subscription storage** keyed to the user, with their chosen time, timezone, city and unit, plus handling of
+   expired subscriptions (the push service answers 404/410).
+6. **A scheduled job** that runs often enough (for example every few minutes) to find users whose local
+   reminder time has arrived and send their message.
+7. **A `push` event handler** in the service worker to show the notification (this build already handles
+   `notificationclick`). On iOS this also needs the app to be installed to the Home Screen.
+
+The code is organised so this can be added without rewriting the UI: scheduling, message building and delivery
+are separate (`utils/reminder.ts`, `hooks/useReminders.ts`, `services/notificationService.ts`), and the
+settings copy is driven by `REMINDER_DELIVERY` (`{ kind: 'in-app', backgroundDelivery: false }`). A push provider
+would set `backgroundDelivery: true`, replace the in-app scheduler with a subscribe/sync call, and the wording in
+Settings would follow. **No backend has been added.** Introducing one is a real architectural change (hosting,
+a database, secrets, a scheduler, privacy for stored city and time), so please discuss the shape of it first.
+
+> Testing note: headless Chromium reports notification permission as "denied" even when granted, so the final
+> operating-system popup cannot be automated. The tests verify the call made on the real service worker
+> registration (title, body, tag, icon) and every decision around it; checking the popup itself needs a manual
+> look in a normal browser window.
 
 ## Weather data
 
@@ -165,14 +225,17 @@ WEATHER_LIVE=1 npx playwright test e2e/weather-live.spec.ts --workers=1
 ```text
 src/
   components/{layout,weather,search,favourites,settings,ui}
-  hooks/      useTheme, useUnits, useFavourites, useSelectedCity, useWeather, useOnlineStatus, useCitySearch, useNow
-  services/   weatherApi, weatherCache (IndexedDB), citySearch (+ geoDbApi, openMeteoGeocodingApi, http), storageService
+  hooks/      useTheme, useUnits, useFavourites, useSelectedCity, useWeather, useOnlineStatus, useCitySearch,
+              useReminderPreference, useNotificationPermission, useReminders, useNow
+  services/   weatherApi, weatherCache (IndexedDB), citySearch (+ geoDbApi, openMeteoGeocodingApi, http),
+              notificationService, reminderWeather, storageService
   pwa/        serviceWorker (registration + update state)
 scripts/      generate-icons.mjs
   types/      weather, city, preferences
-  utils/      weatherCodes, temperature, date, wind, validation, city, cn, constants
+  utils/      weatherCodes, temperature, date, wind, reminder, validation, city, cn, constants
   styles/     globals.css  ← design tokens (light + dark)
-e2e/          Playwright specs (responsive, a11y, theme, contrast, weather, search, units, favourites, navigation, pwa, offline)
+e2e/          Playwright specs (responsive, a11y, theme, contrast, weather, search, units, favourites,
+              navigation, pwa, offline, notifications)
 ```
 
 ## Design system

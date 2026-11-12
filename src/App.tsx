@@ -7,12 +7,17 @@ import { MobileNavigation, type MobileView } from '@/components/layout/MobileNav
 import { Sidebar } from '@/components/layout/Sidebar'
 import { OfflineBanner } from '@/components/layout/OfflineBanner'
 import { OfflineReadyNotice } from '@/components/layout/OfflineReadyNotice'
+import { ReminderBanner } from '@/components/layout/ReminderBanner'
 import { StorageNotice } from '@/components/layout/StorageNotice'
 import { UpdatePrompt } from '@/components/layout/UpdatePrompt'
+import { NotificationSettings } from '@/components/settings/NotificationSettings'
+import { SettingsDialog } from '@/components/settings/SettingsDialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { NoCitySelected } from '@/components/weather/NoCitySelected'
 import { WeatherDashboard } from '@/components/weather/WeatherDashboard'
 import { useFavourites } from '@/hooks/useFavourites'
+import { useReminderPreference } from '@/hooks/useReminderPreference'
+import { useReminders } from '@/hooks/useReminders'
 import { useSelectedCity } from '@/hooks/useSelectedCity'
 import { useUnits } from '@/hooks/useUnits'
 import { probeStorage } from '@/services/storageService'
@@ -24,6 +29,14 @@ export default function App() {
   const { unit, setUnit } = useUnits()
   const { city, selectCity } = useSelectedCity()
   const favourites = useFavourites()
+  const reminderPreference = useReminderPreference()
+  const { reminder, dismissReminder, sendTestReminder } = useReminders({
+    preference: reminderPreference.preference,
+    claimReminder: reminderPreference.claimReminder,
+    city,
+    unit,
+  })
+  const [settingsOpen, setSettingsOpen] = useState(false)
   // The favourite awaiting removal confirmation. `city` outlives `open` so the dialog text does not
   // blank out while it closes.
   const [removal, setRemoval] = useState<{ city: City; open: boolean } | null>(null)
@@ -82,9 +95,15 @@ export default function App() {
       >
         Skip to main content
       </a>
-      <Header onSelectCity={showCity} unit={unit} onUnitChange={setUnit} />
+      <Header
+        onSelectCity={showCity}
+        unit={unit}
+        onUnitChange={setUnit}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
       <div className="mx-auto grid max-w-[88rem] gap-6 px-4 pt-6 pb-24 md:grid-cols-[15rem_minmax(0,1fr)] md:px-6 md:py-8 xl:grid-cols-[18rem_minmax(0,1fr)]">
         <div className="min-w-0 space-y-6 md:order-first md:col-span-2 empty:hidden">
+          {reminder && <ReminderBanner reminder={reminder} onDismiss={dismissReminder} />}
           <OfflineBanner />
           <UpdatePrompt />
           <OfflineReadyNotice />
@@ -127,7 +146,19 @@ export default function App() {
         view={view}
         onChange={changeView}
         favouriteCount={favourites.favourites.length}
+        onOpenSettings={() => setSettingsOpen(true)}
       />
+      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)}>
+        <NotificationSettings
+          preference={reminderPreference.preference}
+          onEnabledChange={reminderPreference.setEnabled}
+          onTimeChange={reminderPreference.setTime}
+          onSendTest={sendTestReminder}
+          testReminder={reminder}
+          city={city}
+          unit={unit}
+        />
+      </SettingsDialog>
       <ConfirmDialog
         open={removal?.open ?? false}
         title={removing ? `Remove ${removing.name} from favourites?` : 'Remove favourite?'}
