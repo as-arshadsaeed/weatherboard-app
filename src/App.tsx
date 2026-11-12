@@ -5,7 +5,9 @@ import { FavouriteCities } from '@/components/favourites/FavouriteCities'
 import { Header } from '@/components/layout/Header'
 import { MobileNavigation, type MobileView } from '@/components/layout/MobileNavigation'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { OfflineReadyNotice } from '@/components/layout/OfflineReadyNotice'
 import { StorageNotice } from '@/components/layout/StorageNotice'
+import { UpdatePrompt } from '@/components/layout/UpdatePrompt'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { NoCitySelected } from '@/components/weather/NoCitySelected'
 import { WeatherDashboard } from '@/components/weather/WeatherDashboard'
@@ -82,6 +84,8 @@ export default function App() {
       <Header onSelectCity={showCity} unit={unit} onUnitChange={setUnit} />
       <div className="mx-auto grid max-w-[88rem] gap-6 px-4 pt-6 pb-24 md:grid-cols-[15rem_minmax(0,1fr)] md:px-6 md:py-8 xl:grid-cols-[18rem_minmax(0,1fr)]">
         <div className="min-w-0 space-y-6 md:col-span-2 empty:hidden">
+          <UpdatePrompt />
+          <OfflineReadyNotice />
           <StorageNotice />
         </div>
         <main
