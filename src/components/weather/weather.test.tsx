@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -100,7 +100,7 @@ describe('WeatherDashboard', () => {
     fetchMock.mockReturnValue(new Promise(() => {}))
     render(<WeatherDashboard city={london} unit="celsius" />)
 
-    expect(screen.getByRole('status')).toHaveTextContent('Loading weather for London…')
+    expect(screen.getByRole('status', { busy: true })).toHaveTextContent('Loading weather for London…')
     expect(screen.getByRole('heading', { level: 1, name: 'London' })).toBeVisible()
     expect(document.body.textContent).not.toMatch(/\d\s*°/)
     expect(screen.queryByText('Weather data by')).toBeNull()
@@ -117,7 +117,7 @@ describe('WeatherDashboard', () => {
       'href',
       'https://open-meteo.com/',
     )
-    expect(screen.queryByRole('status')).toBeNull()
+    expect(screen.queryByRole('status', { busy: true })).toBeNull() // the skeleton is gone; only the quiet announcer remains
   })
 
   it('shows a specific, actionable error on network failure and recovers on retry', async () => {
@@ -155,6 +155,39 @@ describe('WeatherDashboard', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'The weather service is temporarily unavailable',
     )
+  })
+
+  describe('screen reader announcements', () => {
+    const announcer = () => screen.getAllByRole('status').find((el) => el.getAttribute('aria-atomic') === 'true')!
+
+    it('keeps a quiet live region mounted from the start, so the weather is announced when it arrives', async () => {
+      fetchMock.mockReturnValue(new Promise(() => {}))
+      const { unmount } = render(<WeatherDashboard city={london} unit="celsius" />)
+      expect(announcer()).toBeEmptyDOMElement() // present while loading (the skeleton announces itself)
+      expect(announcer()).toHaveAttribute('aria-live', 'polite')
+      unmount()
+
+      fetchMock.mockResolvedValue(jsonResponse(buildForecastResponse()))
+      render(<WeatherDashboard city={london} unit="celsius" />)
+      const region = announcer()
+      await waitFor(() => expect(region).toHaveTextContent('Weather for London: Partly cloudy, 7°C.'))
+      expect(announcer()).toBe(region) // the same element, so assistive technology sees a change, not a new region
+    })
+
+    it('announces the new values when the unit changes', async () => {
+      fetchMock.mockResolvedValue(jsonResponse(buildForecastResponse()))
+      const { rerender } = render(<WeatherDashboard city={london} unit="celsius" />)
+      await waitFor(() => expect(announcer()).toHaveTextContent('7°C'))
+      rerender(<WeatherDashboard city={london} unit="fahrenheit" />)
+      expect(announcer()).toHaveTextContent('Weather for London: Partly cloudy, 44°F.')
+    })
+
+    it('stays silent for errors, which announce themselves as alerts', async () => {
+      fetchMock.mockRejectedValue(new TypeError('Failed to fetch'))
+      render(<WeatherDashboard city={london} unit="celsius" />)
+      expect(await screen.findByRole('alert')).toBeVisible()
+      expect(announcer()).toBeEmptyDOMElement()
+    })
   })
 
   it('does not refetch when only the unit changes', async () => {

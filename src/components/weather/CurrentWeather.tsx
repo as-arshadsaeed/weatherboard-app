@@ -75,7 +75,7 @@ export function CurrentWeather({ city, report, unit, action }: CurrentWeatherPro
             <time dateTime={now.toISOString()}>
               {formatLocalDate(now, timezone)} · {formatLocalTime(now, timezone)}
             </time>{' '}
-            <span className="text-muted-foreground/80">local time</span>
+            <span>local time</span>
           </p>
           {action && <div className="mt-3">{action}</div>}
         </div>

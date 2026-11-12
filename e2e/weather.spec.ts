@@ -39,7 +39,7 @@ for (const vp of [
       await expect(page.getByRole('heading', { level: 1, name: 'London' })).toBeVisible()
       await expect(page.getByText('England, United Kingdom')).toBeVisible()
       await expect(page.getByText('7 degrees Celsius')).toBeVisible()
-      await expect(page.getByText('Partly cloudy')).toBeVisible()
+      await expect(page.getByText('Partly cloudy', { exact: true })).toBeVisible()
       await expect(page.locator('main').getByRole('listitem')).toHaveCount(5)
       await expect(page.getByText('Weather data by Open-Meteo.com')).toBeVisible()
 

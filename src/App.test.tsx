@@ -208,9 +208,11 @@ describe('dashboard shell', () => {
   })
 
   describe('responsive navigation (class-level; real visibility is verified in Playwright)', () => {
+    const weatherMain = () => document.getElementById('main')!
+
     it('shows the weather view by default: sidebar hidden below md, main visible', () => {
       render(<App />)
-      expect(screen.getByRole('main')).not.toHaveClass('hidden')
+      expect(weatherMain()).not.toHaveClass('hidden')
       expect(screen.getByRole('complementary', { name: 'Saved cities', hidden: true })).toHaveClass('hidden', 'md:block')
       expect(screen.getByRole('button', { name: 'Weather' })).toHaveAttribute('aria-current', 'page')
     })
@@ -219,12 +221,12 @@ describe('dashboard shell', () => {
       const user = userEvent.setup()
       render(<App />)
       await user.click(screen.getByRole('button', { name: 'Favourites' }))
-      expect(screen.getByRole('main', { hidden: true })).toHaveClass('hidden', 'md:block')
-      expect(screen.getByRole('complementary', { name: 'Saved cities' })).not.toHaveClass('hidden')
+      expect(weatherMain()).toHaveClass('hidden', 'md:block')
+      expect(screen.getByRole('main', { name: 'Favourite cities' })).not.toHaveClass('hidden')
       expect(screen.getByRole('button', { name: 'Favourites' })).toHaveAttribute('aria-current', 'page')
 
       await user.click(screen.getByRole('button', { name: 'Weather' }))
-      expect(screen.getByRole('main')).not.toHaveClass('hidden')
+      expect(weatherMain()).not.toHaveClass('hidden')
     })
 
     it('choosing a favourite returns to the weather view and loads that city', async () => {
@@ -237,9 +239,9 @@ describe('dashboard shell', () => {
       render(<App />)
 
       await user.click(screen.getByRole('button', { name: /^Favourites/ }))
-      await user.click(within(screen.getByRole('complementary')).getByRole('button', { name: /^Paris/ }))
+      await user.click(within(screen.getByRole('main', { name: 'Favourite cities' })).getByRole('button', { name: /^Paris/ }))
 
-      expect(screen.getByRole('main')).not.toHaveClass('hidden')
+      expect(weatherMain()).not.toHaveClass('hidden')
       expect(screen.getByRole('button', { name: /^Favourites/ })).not.toHaveAttribute('aria-current')
       expect(await screen.findByText('7 degrees Celsius')).toBeVisible()
     })
@@ -249,7 +251,7 @@ describe('dashboard shell', () => {
       render(<App />)
       await user.click(screen.getByRole('button', { name: 'Favourites' }))
       await user.click(screen.getByRole('link', { name: 'Skip to main content' }))
-      expect(screen.getByRole('main')).not.toHaveClass('hidden')
+      expect(weatherMain()).not.toHaveClass('hidden')
     })
 
     it('shows the number of saved favourites on the tab', () => {
@@ -262,6 +264,61 @@ describe('dashboard shell', () => {
       )
       render(<App />)
       expect(screen.getByRole('button', { name: 'Favourites, 2 of 5 saved' })).toBeVisible()
+    })
+  })
+
+  describe('landmarks and headings on every view', () => {
+    function stubViewport(desktop: boolean) {
+      vi.stubGlobal('matchMedia', (query: string) => ({
+        matches: desktop && query.includes('min-width'),
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }))
+    }
+
+    it('phone Favourites view: the panel is the main landmark with its own level-one heading', async () => {
+      stubViewport(false)
+      const user = userEvent.setup()
+      render(<App />)
+      await user.click(screen.getByRole('button', { name: 'Favourites' }))
+
+      const main = screen.getByRole('main', { name: 'Favourite cities' })
+      expect(within(main).getByRole('heading', { level: 1, name: 'Favourite cities' })).toBeInTheDocument()
+      expect(within(main).getByRole('heading', { level: 2, name: 'Favourites' })).toBeVisible()
+      expect(screen.queryByRole('complementary')).toBeNull() // it is not also a sidebar
+    })
+
+    it('tablet/desktop: the sidebar stays a complementary landmark and there is a single level-one heading', async () => {
+      stubViewport(true)
+      const user = userEvent.setup()
+      render(<App />)
+      await user.click(screen.getByRole('button', { name: 'Favourites' })) // stale phone state must not change semantics
+      expect(screen.getByRole('complementary', { name: 'Saved cities' })).toBeInTheDocument()
+      expect(screen.queryByRole('main', { name: 'Favourite cities' })).toBeNull()
+      expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    })
+
+    it('the weather view has exactly one main landmark and one level-one heading', () => {
+      stubViewport(false)
+      render(<App />)
+      expect(screen.getAllByRole('main')).toHaveLength(1)
+      expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    })
+  })
+
+  describe('page title', () => {
+    it('is the app name until a city is shown, then names the city, and follows the selection', async () => {
+      const user = userEvent.setup()
+      vi.stubGlobal('fetch', vi.fn().mockImplementation(() => Promise.resolve(jsonResponse(buildForecastResponse()))))
+      window.localStorage.setItem(
+        'weatherboard:favourites',
+        JSON.stringify([{ id: 'x', name: 'Paris', latitude: 48.85, longitude: 2.35 }]),
+      )
+      render(<App />)
+      expect(document.title).toBe('WeatherBoard')
+      await user.click(screen.getByRole('button', { name: /^Favourites/ }))
+      await user.click(within(screen.getByRole('main', { name: 'Favourite cities' })).getByRole('button', { name: /^Paris/ }))
+      await waitFor(() => expect(document.title).toBe('Paris · WeatherBoard'))
     })
   })
 })
