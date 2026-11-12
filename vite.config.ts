@@ -56,6 +56,11 @@ export default defineConfig({
       devOptions: { enabled: false },
     }),
   ],
+  define: {
+    // Lets the app refuse analytics in a Vercel preview/development build even if VITE_ANALYTICS leaked there.
+    // Empty when Vercel's system environment variables are not exposed to the build, or outside Vercel.
+    __VERCEL_ENV__: JSON.stringify(process.env.VERCEL_ENV ?? ''),
+  },
   resolve: {
     alias: { '@': path.resolve(import.meta.dirname, 'src') },
   },
