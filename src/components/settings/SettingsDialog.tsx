@@ -19,7 +19,7 @@ export function SettingsDialog({ open, onClose, children }: SettingsDialogProps)
       open={open}
       onClose={onClose}
       labelledBy={titleId}
-      className="max-h-[calc(100dvh-2rem)] w-[min(34rem,calc(100vw-2rem))] overflow-y-auto"
+      className="max-h-[calc(100dvh-2rem)] w-[min(34rem,calc(100vw-2rem))] scroll-py-4 overflow-y-auto overscroll-contain"
     >
       <div className="p-6">
         <div className="mb-5 flex items-center justify-between gap-4">

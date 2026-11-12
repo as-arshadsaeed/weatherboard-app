@@ -15,7 +15,9 @@ import { SettingsDialog } from '@/components/settings/SettingsDialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { NoCitySelected } from '@/components/weather/NoCitySelected'
 import { WeatherDashboard } from '@/components/weather/WeatherDashboard'
+import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useFavourites } from '@/hooks/useFavourites'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useReminderPreference } from '@/hooks/useReminderPreference'
 import { useReminders } from '@/hooks/useReminders'
 import { useSelectedCity } from '@/hooks/useSelectedCity'
@@ -37,6 +39,8 @@ export default function App() {
     unit,
   })
   const [settingsOpen, setSettingsOpen] = useState(false)
+  useDocumentTitle(city?.name ?? null)
+  const isPhone = !useMediaQuery('(min-width: 48rem)')
   // The favourite awaiting removal confirmation. `city` outlives `open` so the dialog text does not
   // blank out while it closes.
   const [removal, setRemoval] = useState<{ city: City; open: boolean } | null>(null)
@@ -91,7 +95,7 @@ export default function App() {
         href="#main"
         // On a phone's Favourites view <main> is hidden, so make it the visible target first.
         onClick={() => setView('weather')}
-        className="sr-only z-50 rounded-lg bg-primary px-4 py-2 text-primary-foreground focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+        className="sr-only z-50 rounded-lg bg-primary text-primary-foreground focus:not-sr-only focus:px-4 focus:py-2 focus:fixed focus:top-3 focus:left-3 focus:inline-flex focus:min-h-11 focus:items-center"
       >
         Skip to main content
       </a>
@@ -133,7 +137,7 @@ export default function App() {
             <NoCitySelected />
           )}
         </main>
-        <Sidebar className={cn(view !== 'favourites' && 'hidden md:block')}>
+        <Sidebar asMain={isPhone && view === 'favourites'} className={cn(view !== 'favourites' && 'hidden md:block')}>
           <FavouriteCities
             favourites={favourites.favourites}
             selectedCity={city}

@@ -58,7 +58,7 @@ describe('viewing weather online saves it for later', () => {
   it('saves the forecast that was shown, with the time it was retrieved', async () => {
     open()
     render(<App />)
-    expect(await screen.findByLabelText('7 degrees Celsius')).toBeVisible()
+    expect(await screen.findByText('7 degrees Celsius')).toBeVisible()
     await waitFor(async () => expect(await loadWeatherSnapshot(london)).not.toBeNull())
     expect((await loadWeatherSnapshot(london))?.report.current.temperatureC).toBe(6.7)
   })
@@ -66,7 +66,7 @@ describe('viewing weather online saves it for later', () => {
   it('shows no offline banner or saved-weather notice when everything works', async () => {
     open()
     render(<App />)
-    await screen.findByLabelText('7 degrees Celsius')
+    await screen.findByText('7 degrees Celsius')
     expect(screen.queryByText('You’re offline.')).toBeNull()
     expect(screen.queryByRole('status', { name: 'Saved weather' })).toBeNull()
   })
@@ -79,7 +79,7 @@ describe('opening the app offline', () => {
     open()
     render(<App />)
 
-    expect(await screen.findByLabelText('4 degrees Celsius')).toBeVisible()
+    expect(await screen.findByText('4 degrees Celsius')).toBeVisible()
     expect(screen.getByText('You’re offline.')).toBeVisible() // the banner
     const notice = screen.getByRole('status', { name: 'Saved weather' })
     expect(notice).toHaveTextContent('Showing saved weather.')
@@ -101,7 +101,7 @@ describe('opening the app offline', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'You’re offline, and no saved weather is available for this city. Connect to the internet to load it.',
     )
-    expect(screen.queryByLabelText(/degrees/)).toBeNull()
+    expect(screen.queryByText(/degrees/)).toBeNull()
     expect(screen.queryByRole('status', { name: 'Saved weather' })).toBeNull()
   })
 
@@ -114,23 +114,23 @@ describe('opening the app offline', () => {
     const panel = screen.getByRole('region', { name: 'Favourites' })
 
     await user.click(within(panel).getByRole('button', { name: /^London/ }))
-    expect(await screen.findByLabelText('4 degrees Celsius')).toBeVisible()
+    expect(await screen.findByText('4 degrees Celsius')).toBeVisible()
 
     await user.click(within(panel).getByRole('button', { name: /^Berlin/ }))
     expect(await screen.findByRole('alert')).toHaveTextContent('no saved weather is available for this city')
-    expect(screen.queryByLabelText(/degrees/)).toBeNull()
+    expect(screen.queryByText(/degrees/)).toBeNull()
   })
 
   it('keeps the saved weather available across a "reload" (a fresh mount)', async () => {
     open()
     const first = render(<App />)
-    await screen.findByLabelText('7 degrees Celsius')
+    await screen.findByText('7 degrees Celsius')
     await waitFor(async () => expect(await loadWeatherSnapshot(london)).not.toBeNull())
     first.unmount()
 
     setOnLine(false)
     render(<App />)
-    expect(await screen.findByLabelText('7 degrees Celsius')).toBeVisible()
+    expect(await screen.findByText('7 degrees Celsius')).toBeVisible()
     expect(screen.getByRole('status', { name: 'Saved weather' })).toBeVisible()
   })
 })
@@ -139,7 +139,7 @@ describe('connectivity changes while the app is open', () => {
   it('shows saved weather when the connection drops, then fresh weather when it returns', async () => {
     open()
     render(<App />)
-    await screen.findByLabelText('7 degrees Celsius')
+    await screen.findByText('7 degrees Celsius')
     await waitFor(async () => expect(await loadWeatherSnapshot(london)).not.toBeNull())
 
     goOffline()
@@ -148,7 +148,7 @@ describe('connectivity changes while the app is open', () => {
 
     temperature = 12.4 // the weather changed while we were away
     goOnline()
-    expect(await screen.findByLabelText('12 degrees Celsius')).toBeVisible()
+    expect(await screen.findByText('12 degrees Celsius')).toBeVisible()
     await waitFor(() => expect(screen.queryByRole('status', { name: 'Saved weather' })).toBeNull())
     expect(screen.getByText('You’re back online.')).toBeVisible()
     await waitFor(async () => expect((await loadWeatherSnapshot(london))?.report.current.temperatureC).toBe(12.4))
@@ -161,13 +161,13 @@ describe('connectivity changes while the app is open', () => {
     open()
     render(<App />)
 
-    expect(await screen.findByLabelText('4 degrees Celsius')).toBeVisible()
+    expect(await screen.findByText('4 degrees Celsius')).toBeVisible()
     expect(screen.getByRole('status', { name: 'Saved weather' })).toHaveTextContent('Can’t reach the weather service')
     expect(screen.queryByText('You’re offline.')).toBeNull() // we are not offline, so we do not claim it
 
     forecastBehaviour = 'ok'
     await user.click(screen.getByRole('button', { name: 'Try again' }))
-    expect(await screen.findByLabelText('7 degrees Celsius')).toBeVisible()
+    expect(await screen.findByText('7 degrees Celsius')).toBeVisible()
     await waitFor(() => expect(screen.queryByRole('status', { name: 'Saved weather' })).toBeNull())
   })
 
@@ -187,9 +187,9 @@ describe('the unit toggle on saved weather', () => {
     setOnLine(false)
     open()
     render(<App />)
-    await screen.findByLabelText('7 degrees Celsius')
+    await screen.findByText('7 degrees Celsius')
     await user.click(screen.getByRole('button', { name: 'Fahrenheit (°F)' }))
-    expect(screen.getByLabelText('44 degrees Fahrenheit')).toBeVisible()
+    expect(screen.getByText('44 degrees Fahrenheit')).toBeVisible()
     expect(forecastRequests()).toHaveLength(0)
   })
 })
@@ -199,7 +199,7 @@ describe('storage problems', () => {
     vi.stubGlobal('indexedDB', undefined)
     open()
     render(<App />)
-    expect(await screen.findByLabelText('7 degrees Celsius')).toBeVisible()
+    expect(await screen.findByText('7 degrees Celsius')).toBeVisible()
     expect(screen.queryByRole('status', { name: 'Saved weather' })).toBeNull()
   })
 

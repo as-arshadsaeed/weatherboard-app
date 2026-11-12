@@ -71,7 +71,7 @@ test.describe('phone (375px): bottom tab bar', () => {
     await panel(page).getByRole('button', { name: /^Tokyo/ }).click()
 
     await expect(main(page)).toBeVisible()
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     await expect(page.getByRole('heading', { level: 1, name: 'Tokyo' })).toBeVisible()
     await expect(panel(page)).toBeHidden()
     await expect(tab(page, /^Weather/)).toHaveAttribute('aria-current', 'page')
@@ -116,7 +116,7 @@ test.describe('phone (375px): bottom tab bar', () => {
     await setup(page)
     await tab(page, /^Favourites/).click()
     await panel(page).getByRole('button', { name: /^Tokyo/ }).click()
-    await page.getByLabel('7 degrees Celsius').waitFor()
+    await page.getByText('7 degrees Celsius').waitFor()
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
     const attribution = (await page.getByText('Weather data by Open-Meteo.com').boundingBox())!
     const bar = (await nav(page).boundingBox())!
@@ -140,7 +140,7 @@ test.describe('phone (375px): bottom tab bar', () => {
       await setup(page)
       if (mode === 'dark') await page.getByRole('button', { name: /switch to dark/i }).click()
       await expect(page.locator('html')).toHaveClass(mode === 'dark' ? /dark/ : /^(?!.*dark)/)
-      await expect(page.getByLabel('7 degrees Celsius')).toHaveCount(0) // nothing selected yet: no weather
+      await expect(page.getByText('7 degrees Celsius')).toHaveCount(0) // nothing selected yet: no weather
       await page.mouse.move(0, 300)
       // The current tab (Weather) is bolder than the other, so state never depends on colour alone.
       const weight = (name: RegExp) => tab(page, name).evaluate((el) => getComputedStyle(el).fontWeight)

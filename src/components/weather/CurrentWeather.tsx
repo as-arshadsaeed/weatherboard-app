@@ -6,6 +6,7 @@ import { useNow } from '@/hooks/useNow'
 import type { City } from '@/types/city'
 import type { TemperatureUnit, WeatherReport } from '@/types/weather'
 import { formatLocation } from '@/utils/city'
+import { Spoken } from '@/components/ui/spoken'
 import { UNAVAILABLE_TEXT } from '@/utils/constants'
 import { formatLocalDate, formatLocalTime } from '@/utils/date'
 import { formatDegrees, formatTemperature, roundTemperature, temperatureUnitLetter } from '@/utils/temperature'
@@ -40,8 +41,8 @@ function Stat({
       {value === null ? (
         <dd className="text-sm font-medium text-muted-foreground">{UNAVAILABLE_TEXT}</dd>
       ) : (
-        <dd className="tabular text-lg font-semibold tracking-tight" aria-label={accessibleValue}>
-          {value}
+        <dd className="tabular text-lg font-semibold tracking-tight">
+          <Spoken spoken={accessibleValue}>{value}</Spoken>
         </dd>
       )}
     </div>
@@ -65,16 +66,16 @@ export function CurrentWeather({ city, report, unit, action }: CurrentWeatherPro
         <div className="min-w-0">
           <h1
             id="current-weather-heading"
-            className="truncate text-2xl font-semibold tracking-tight md:text-3xl"
+            className="text-2xl font-semibold tracking-tight [overflow-wrap:anywhere] md:text-3xl"
           >
             {city.name}
           </h1>
-          {place && <p className="mt-0.5 truncate text-sm text-muted-foreground">{place}</p>}
+          {place && <p className="mt-0.5 text-sm [overflow-wrap:anywhere] text-muted-foreground">{place}</p>}
           <p className="mt-2 text-sm text-muted-foreground">
             <time dateTime={now.toISOString()}>
               {formatLocalDate(now, timezone)} · {formatLocalTime(now, timezone)}
             </time>{' '}
-            <span className="text-muted-foreground/80">local time</span>
+            <span>local time</span>
           </p>
           {action && <div className="mt-3">{action}</div>}
         </div>
@@ -82,31 +83,28 @@ export function CurrentWeather({ city, report, unit, action }: CurrentWeatherPro
           code={current.weatherCode}
           isDay={current.isDay}
           size="lg"
-          animated
           className="hidden sm:grid"
         />
       </div>
 
-      <div className="mt-6 flex items-center gap-4">
+      <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
         <WeatherIcon
           code={current.weatherCode}
           isDay={current.isDay}
           size="lg"
-          animated
           className="sm:hidden"
         />
         <div>
-          <p
-            className="tabular flex items-start text-7xl leading-none font-semibold tracking-tighter md:text-8xl"
-            aria-label={`${roundTemperature(current.temperatureC, unit)} degrees ${unit === 'celsius' ? 'Celsius' : 'Fahrenheit'}`}
-          >
-            <span aria-hidden="true">{roundTemperature(current.temperatureC, unit)}</span>
-            <span
-              aria-hidden="true"
-              className="mt-1 ml-1 text-3xl font-medium tracking-normal text-muted-foreground md:mt-2 md:text-4xl"
+          <p className="tabular text-7xl leading-none font-semibold tracking-tighter md:text-8xl">
+            <Spoken
+              spoken={`${roundTemperature(current.temperatureC, unit)} degrees ${unit === 'celsius' ? 'Celsius' : 'Fahrenheit'}`}
+              visualClassName="flex items-start"
             >
-              °{letter}
-            </span>
+              <span>{roundTemperature(current.temperatureC, unit)}</span>
+              <span className="mt-1 ml-1 text-3xl font-medium tracking-normal text-muted-foreground md:mt-2 md:text-4xl">
+                °{letter}
+              </span>
+            </Spoken>
           </p>
           <p className="mt-3 text-lg font-medium">{condition.label}</p>
         </div>

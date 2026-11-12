@@ -44,6 +44,8 @@ export function FavouriteButton({ city, isFavourite, onAdd, onRequestRemove }: F
       <Button
         variant="outline"
         size="sm"
+        // Wraps (instead of overflowing) when text is enlarged or the column is very narrow.
+        className="h-auto min-h-11 max-w-full py-2 whitespace-normal md:min-h-9"
         onClick={handleClick}
         aria-describedby={isFavourite ? hintId : undefined}
       >

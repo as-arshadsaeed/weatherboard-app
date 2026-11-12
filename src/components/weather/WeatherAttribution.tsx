@@ -7,7 +7,8 @@ export function WeatherAttribution() {
         href="https://open-meteo.com/"
         target="_blank"
         rel="noopener noreferrer"
-        className="rounded-sm underline underline-offset-2 hover:text-foreground"
+        // 44 px tall hit area; the negative margin keeps the line's layout height unchanged.
+        className="-my-3.5 inline-flex min-h-11 items-center rounded-sm underline underline-offset-2 hover:text-foreground"
       >
         Open-Meteo.com
       </a>

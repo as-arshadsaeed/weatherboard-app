@@ -8,9 +8,10 @@ import { WeatherDetails } from '@/components/weather/WeatherDetails'
 import { WeatherError } from '@/components/weather/WeatherError'
 import { WeatherSkeleton } from '@/components/weather/WeatherSkeleton'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
-import { useWeather } from '@/hooks/useWeather'
+import { useWeather, type WeatherState } from '@/hooks/useWeather'
 import type { City } from '@/types/city'
 import type { TemperatureUnit, WeatherReport } from '@/types/weather'
+import { describeWeatherForAnnouncement } from '@/utils/announcements'
 
 interface WeatherDashboardProps {
   city: City
@@ -50,7 +51,26 @@ function WeatherContent({
 export function WeatherDashboard({ city, unit, action }: WeatherDashboardProps) {
   const online = useOnlineStatus()
   const { state, retry } = useWeather(city, online)
+  const announcement = describeWeatherForAnnouncement(city, state, unit)
 
+  // A live region only announces changes to content *inside* it, so it stays mounted in every state.
+  return (
+    <>
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {announcement}
+      </div>
+      <WeatherView city={city} unit={unit} action={action} state={state} retry={retry} />
+    </>
+  )
+}
+
+function WeatherView({
+  city,
+  unit,
+  action,
+  state,
+  retry,
+}: WeatherDashboardProps & { state: WeatherState; retry: () => void }) {
   switch (state.status) {
     case 'idle':
     case 'loading':

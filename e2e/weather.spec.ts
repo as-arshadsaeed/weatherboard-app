@@ -38,8 +38,8 @@ for (const vp of [
 
       await expect(page.getByRole('heading', { level: 1, name: 'London' })).toBeVisible()
       await expect(page.getByText('England, United Kingdom')).toBeVisible()
-      await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
-      await expect(page.getByText('Partly cloudy')).toBeVisible()
+      await expect(page.getByText('7 degrees Celsius')).toBeVisible()
+      await expect(page.getByText('Partly cloudy', { exact: true })).toBeVisible()
       await expect(page.locator('main').getByRole('listitem')).toHaveCount(5)
       await expect(page.getByText('Weather data by Open-Meteo.com')).toBeVisible()
 
@@ -78,12 +78,16 @@ test.describe('forecast layout', () => {
     await mockWeather(page)
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto(LONDON_URL)
-    const desktopTops = await page.locator('main').getByRole('listitem').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)))
-    expect(new Set(desktopTops).size).toBe(1)
+    const items = page.locator('main').getByRole('listitem')
+    // Wait for the forecast to be rendered first: evaluateAll does not retry, so measuring right after
+    // navigation could see an empty list.
+    await expect(items).toHaveCount(5)
+    const distinctRows = async () =>
+      new Set(await items.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)))).size
+    await expect.poll(distinctRows).toBe(1)
 
     await page.setViewportSize({ width: 375, height: 812 })
-    const mobileTops = await page.locator('main').getByRole('listitem').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)))
-    expect(new Set(mobileTops).size).toBe(5)
+    await expect.poll(distinctRows).toBe(5)
   })
 })
 
@@ -102,7 +106,7 @@ test.describe('loading state', () => {
     await expect(page.locator('main')).not.toContainText(/\d\s*°/)
 
     release()
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     await expect(page.getByRole('status').filter({ hasText: 'Loading weather' })).toHaveCount(0)
   })
 
@@ -119,7 +123,7 @@ test.describe('loading state', () => {
     const mainBefore = await page.locator('main').evaluate((el) => el.getBoundingClientRect().height)
 
     release()
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     const mainAfter = await page.locator('main').evaluate((el) => el.getBoundingClientRect().height)
     expect(Math.abs(mainAfter - mainBefore)).toBeLessThanOrEqual(24)
   })
@@ -139,7 +143,7 @@ test.describe('failure states', () => {
     await page.unroute(API_GLOB)
     await page.route(API_GLOB, (route) => route.fulfill({ json: forecastBody() }))
     await page.getByRole('button', { name: 'Try again' }).click()
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     expect(errors).toEqual([])
   })
 
@@ -169,7 +173,7 @@ test.describe('failure states', () => {
     await page.route(API_GLOB, (route) => route.fulfill({ json: { hello: 'world' } }))
     await page.goto(LONDON_URL)
     await expect(page.getByRole('alert')).toContainText('could not be read')
-    await expect(page.getByLabel(/degrees/)).toHaveCount(0)
+    await expect(page.getByText(/degrees/)).toHaveCount(0)
   })
 })
 
@@ -177,7 +181,7 @@ test.describe('no unnecessary API calls', () => {
   test('switching theme does not refetch weather', async ({ page }) => {
     const requests = await mockWeather(page)
     await page.goto(LONDON_URL)
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
 
     await page.getByRole('button', { name: /switch to dark/i }).click()
     await page.getByRole('button', { name: /switch to light/i }).click()
@@ -187,7 +191,7 @@ test.describe('no unnecessary API calls', () => {
   test('requests the city timezone and 5 forecast days', async ({ page }) => {
     const requests = await mockWeather(page)
     await page.goto(`${LONDON_URL}&tz=Europe/London`)
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     const url = new URL(requests[0]!)
     expect(url.searchParams.get('timezone')).toBe('Europe/London')
     expect(url.searchParams.get('forecast_days')).toBe('5')
@@ -201,17 +205,17 @@ test.describe('accessibility', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'London' })).toBeVisible()
     await expect(page.getByRole('heading', { level: 2, name: '5-day forecast' })).toBeVisible()
     await expect(page.getByRole('listitem', { name: 'Saturday 14 November' })).toContainText('Light rain')
-    await expect(page.getByLabel('82 percent chance of precipitation')).toBeVisible()
+    await expect(page.getByText('82 percent chance of precipitation')).toBeVisible()
   })
 
-  test('animation is disabled when the user prefers reduced motion', async ({ page }) => {
+  test('icons are static when the user prefers reduced motion', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await mockWeather(page)
     await page.goto(LONDON_URL)
-    const icon = page.locator('main svg.animate-weather-float, main svg.animate-weather-spin').first()
-    await expect(icon).toBeVisible()
-    const duration = await icon.evaluate((el) => getComputedStyle(el).animationDuration)
-    expect(parseFloat(duration)).toBeLessThan(0.01)
+    await expect(page.getByRole('heading', { level: 1, name: 'London' })).toBeVisible()
+    const staticIcon = page.locator('main [data-weather-icon] svg.lucide:visible').first()
+    await expect(staticIcon).toBeVisible()
+    await expect(page.locator('main .lottie-icon')).toHaveCount(0)
   })
 })
 
@@ -245,7 +249,7 @@ test.describe('detail cards', () => {
     await page.route(API_GLOB, (route) => route.fulfill({ json: body }))
     await page.goto(LONDON_URL)
 
-    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByText('7 degrees Celsius')).toBeVisible()
     await expect(card(page, 'Humidity')).toContainText('Not available')
     await expect(card(page, 'Wind speed')).toContainText('Not available')
     await expect(card(page, 'Precipitation')).toContainText('Not available')

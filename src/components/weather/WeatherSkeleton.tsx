@@ -23,11 +23,11 @@ export function WeatherSkeleton({
       <section className="rounded-2xl border bg-card p-6 shadow-card md:p-8">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="truncate text-2xl font-semibold tracking-tight md:text-3xl">
+            <h1 className="text-2xl font-semibold tracking-tight [overflow-wrap:anywhere] md:text-3xl">
               {city.name}
             </h1>
             {place ? (
-              <p className="mt-0.5 truncate text-sm text-muted-foreground">{place}</p>
+              <p className="mt-0.5 text-sm [overflow-wrap:anywhere] text-muted-foreground">{place}</p>
             ) : (
               <p className="mt-0.5 h-5" />
             )}

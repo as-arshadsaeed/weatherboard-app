@@ -44,7 +44,7 @@ async function searchAndSelect(user: ReturnType<typeof userEvent.setup>, text: s
   await user.clear(searchBox())
   await user.type(searchBox(), text)
   await user.click(await screen.findByRole('option', { name: option }))
-  await screen.findByLabelText('7 degrees Celsius')
+  await screen.findByText('7 degrees Celsius')
 }
 
 function preload(...cities: unknown[]) {
@@ -60,7 +60,7 @@ describe('adding favourites', () => {
     await user.click(screen.getByRole('button', { name: 'Add to favourites' }))
     expect(screen.getByRole('button', { name: 'Saved' })).toBeVisible()
     expect(within(panel()).getByRole('button', { name: /^London/ })).toBeVisible()
-    expect(within(panel()).getByLabelText('1 of 5 favourites saved')).toBeVisible()
+    expect(within(panel()).getByText('1 of 5 favourites saved')).toBeVisible()
     expect(JSON.parse(window.localStorage.getItem('weatherboard:favourites')!)).toHaveLength(1)
   })
 
@@ -97,7 +97,7 @@ describe('switching to a favourite', () => {
     expect(screen.getByText('No city selected')).toBeVisible()
 
     await user.click(within(panel()).getByRole('button', { name: /^Paris/ }))
-    expect(await screen.findByLabelText('7 degrees Celsius')).toBeVisible()
+    expect(await screen.findByText('7 degrees Celsius')).toBeVisible()
     expect(screen.getByRole('heading', { level: 1, name: 'Paris' })).toBeVisible()
     expect(forecastCalls().at(-1)?.searchParams.get('latitude')).toBe('48.8534')
     expect(forecastCalls().at(-1)?.searchParams.get('longitude')).toBe('2.3488')
@@ -110,7 +110,7 @@ describe('switching to a favourite', () => {
     preload(london, paris)
     render(<App />)
     await user.click(within(panel()).getByRole('button', { name: /^Paris/ }))
-    await screen.findByLabelText('7 degrees Celsius')
+    await screen.findByText('7 degrees Celsius')
     await user.click(within(panel()).getByRole('button', { name: /^London/ }))
     await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'London' })).toBeVisible())
     expect(within(panel()).getByRole('button', { name: /^London/ })).toHaveAttribute('aria-current', 'true')
@@ -166,7 +166,7 @@ describe('removing favourites (always confirmed)', () => {
     preload(london)
     render(<App />)
     await user.click(within(panel()).getByRole('button', { name: /^London/ }))
-    await screen.findByLabelText('7 degrees Celsius')
+    await screen.findByText('7 degrees Celsius')
     await user.click(within(panel()).getByRole('button', { name: 'Remove London from favourites' }))
     await user.click(screen.getByRole('button', { name: 'Remove' }))
     expect(screen.getByRole('heading', { level: 1, name: 'London' })).toBeVisible()
@@ -185,7 +185,7 @@ describe('persistence across reloads', () => {
 
     render(<App />) // "reload"
     expect(within(panel()).getAllByRole('listitem')).toHaveLength(2)
-    expect(await screen.findByLabelText('7 degrees Celsius')).toBeVisible()
+    expect(await screen.findByText('7 degrees Celsius')).toBeVisible()
     expect(screen.getByRole('heading', { level: 1, name: 'Paris' })).toBeVisible()
     expect(screen.getByRole('button', { name: 'Saved' })).toBeVisible()
   })

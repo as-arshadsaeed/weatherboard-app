@@ -2,6 +2,8 @@
 @import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
+/* Landscape phones and other short windows: fixed bars would take too much of the screen. */
+@custom-variant short (@media (max-height: 32rem));
 
 /* ==========================================================================
    Design tokens
@@ -151,27 +153,14 @@
   --shadow-raised: var(--shadow-raised);
 }
 
-/* Weather icon motion. Disabled globally by the prefers-reduced-motion rule below. */
-@theme {
-  --animate-weather-float: weather-float 5s ease-in-out infinite;
-  --animate-weather-spin: weather-spin 48s linear infinite;
-
-  @keyframes weather-float {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-4px);
-    }
-  }
-
-  @keyframes weather-spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-}
+/* Animated weather icons (Lottie). The artwork carries these classes; the colours are the design tokens, so
+   one set of assets follows the light and dark themes. See scripts/generate-lottie.mjs. */
+.lottie-icon .wb-sun path { fill: var(--weather-sun); }
+.lottie-icon .wb-cloud path { fill: var(--weather-cloud); }
+.lottie-icon .wb-rain path { fill: var(--weather-rain); }
+.lottie-icon .wb-snow path { fill: var(--weather-snow); }
+.lottie-icon .wb-storm path { fill: var(--weather-storm); }
+.lottie-icon .wb-night path { fill: var(--weather-night); }
 
 @layer base {
   * {
@@ -181,6 +170,31 @@
   html {
     color-scheme: light;
     -webkit-text-size-adjust: 100%;
+    /* Keep focused elements and anchor targets clear of the sticky header (two rows on phones) and the
+       fixed bottom tab bar (phones only), so focus is never hidden behind them (WCAG 2.4.11). */
+    scroll-padding-top: 8.5rem;
+    scroll-padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+
+  @media (min-width: 48rem) {
+    html {
+      scroll-padding-top: 5rem;
+      scroll-padding-bottom: 1.5rem;
+    }
+  }
+
+  /* The header scrolls away on short viewports, so only breathing room is needed there. */
+  @media (max-height: 32rem) {
+    html {
+      scroll-padding-top: 1rem;
+    }
+  }
+
+  /* While a modal dialog is open the page behind it must not scroll. The stable gutter stops the layout
+     jumping when the scrollbar disappears. */
+  html:has(dialog[open]) {
+    overflow: hidden;
+    scrollbar-gutter: stable;
   }
 
   html.dark {

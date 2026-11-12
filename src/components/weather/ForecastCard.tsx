@@ -24,25 +24,23 @@ export function ForecastCard({ day, index, unit }: ForecastCardProps) {
   return (
     <li
       aria-label={formatForecastDayLong(day.date, index)}
-      className="flex min-h-[5.5rem] items-center gap-4 rounded-2xl border bg-card p-4 shadow-card lg:min-h-[15rem] lg:flex-col lg:justify-between lg:gap-3 lg:text-center"
+      className="flex min-h-[5.5rem] flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border bg-card p-4 shadow-card lg:min-h-[15rem] lg:flex-col lg:flex-nowrap lg:justify-between lg:gap-3 lg:text-center"
     >
       <div className="w-16 shrink-0 lg:w-auto">
         <p className="text-sm font-semibold">{formatForecastDay(day.date, index)}</p>
         <p className="text-xs text-muted-foreground">{formatForecastShortDate(day.date)}</p>
       </div>
 
-      <div className="flex min-w-0 flex-1 items-center gap-3 lg:flex-none lg:flex-col">
+      <div className="flex min-w-24 flex-1 items-center gap-3 lg:min-w-0 lg:flex-none lg:flex-col">
         <WeatherIcon code={day.weatherCode} size="sm" />
-        <p className="min-w-0 text-sm text-balance text-muted-foreground lg:min-h-10">
+        <p className="min-w-0 text-sm text-balance text-muted-foreground [overflow-wrap:anywhere] lg:min-h-10">
           {condition.label}
         </p>
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-1 lg:items-center">
-        <p
-          className="tabular flex items-baseline gap-1.5"
-          aria-label={`High ${formatTemperature(day.maxTemperatureC, unit)}, low ${formatTemperature(day.minTemperatureC, unit)}`}
-        >
+        <p className="tabular flex items-baseline gap-1.5">
+          <span className="sr-only">{`High ${formatTemperature(day.maxTemperatureC, unit)}, low ${formatTemperature(day.minTemperatureC, unit)}`}</span>
           <span aria-hidden="true" className="text-lg font-semibold">
             {formatDegrees(day.maxTemperatureC, unit)}
           </span>
@@ -50,10 +48,8 @@ export function ForecastCard({ day, index, unit }: ForecastCardProps) {
             {formatDegrees(day.minTemperatureC, unit)}
           </span>
         </p>
-        <p
-          className="tabular flex items-center gap-1 text-xs text-muted-foreground"
-          aria-label={precipitationLabel}
-        >
+        <p className="tabular flex items-center gap-1 text-xs text-muted-foreground">
+          <span className="sr-only">{precipitationLabel}</span>
           <Droplets className="size-3.5" aria-hidden="true" />
           <span aria-hidden="true">{precipitation === null ? '–' : `${Math.round(precipitation)}%`}</span>
         </p>

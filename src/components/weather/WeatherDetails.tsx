@@ -27,14 +27,12 @@ function DetailCard({ icon, label, value, spokenValue, note }: DetailCardProps) 
         {value === null ? (
           <span className="text-sm font-medium text-muted-foreground">{UNAVAILABLE_TEXT}</span>
         ) : (
-          <span
-            className="tabular block truncate text-xl font-semibold tracking-tight"
-            aria-label={spokenValue}
-          >
-            {value}
+          <span className="tabular block text-xl font-semibold tracking-tight [overflow-wrap:anywhere]">
+            {spokenValue && <span className="sr-only">{spokenValue}</span>}
+            <span aria-hidden={spokenValue ? 'true' : undefined}>{value}</span>
           </span>
         )}
-        {note && <span className="mt-0.5 block truncate text-xs text-muted-foreground">{note}</span>}
+        {note && <span className="mt-0.5 block [overflow-wrap:anywhere] text-xs text-muted-foreground">{note}</span>}
       </dd>
     </div>
   )

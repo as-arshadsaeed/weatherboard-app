@@ -182,6 +182,66 @@ a database, secrets, a scheduler, privacy for stored city and time), so please d
 > registration (title, body, tag, icon) and every decision around it; checking the popup itself needs a manual
 > look in a normal browser window.
 
+## Accessibility and responsive layout
+
+WeatherBoard targets WCAG 2.2 AA. What is built, and how it is checked:
+
+- **Layouts** — phone (375 px), tablet (768 px) and desktop (1280 px), down to 320 px wide and 200 % text
+  without horizontal scrolling or cut-off content. Long city names wrap rather than being truncated.
+- **Landmarks and headings** — one `main`, one banner and one level-one heading on every screen, including
+  the phone Favourites view. The page title follows the selected city.
+- **Screen readers** — temperatures and other values are real (visually hidden) text, not `aria-label`s on
+  generic elements. A polite live region announces new weather ("Weather for London: Partly cloudy, 7°C.")
+  and unit changes; search results, errors and the offline/update banners announce themselves.
+- **Keyboard** — every control is reachable in visual order with a visible focus ring that is never clipped
+  and never hidden behind the sticky header or the bottom tab bar (`scroll-padding`). A skip link jumps to
+  the weather.
+- **Touch targets** — at least 44 × 44 px on phones, including the logo, the attribution link and the skip
+  link once focused.
+- **Short screens** — on a landscape phone the header scrolls away instead of staying pinned; dialogs scroll
+  inside themselves, and the page behind an open dialog is locked.
+- **Reduced motion** — with `prefers-reduced-motion` nothing animates or transitions, and the animated
+  weather icons are not even downloaded (see below).
+- **Themes** — both themes pass the axe scans and the token-contrast tests.
+
+Automated checks (all in `e2e/`, run against the production build): `a11y-axe` (axe-core, WCAG 2.0–2.2
+A/AA and best practice, on 18 screen states at 375/768/1280 px in light and dark), `a11y-structure`,
+`a11y-targets`, `a11y-focus`, `a11y-motion`, `layout-short` (landscape phone, 320 × 240 window, scroll lock)
+and `reflow` (320 px, 200 % text, text spacing, long names).
+
+**What this does not prove.** Automated tools find only a fraction of accessibility problems. Nothing here
+was tested with a real screen reader (VoiceOver, TalkBack, NVDA), on a physical phone, in Safari/iOS or in
+Firefox: the e2e suite runs in Chromium only. Native modal dialogs do not wrap Tab inside the dialog, so
+focus can reach the browser's own controls (the page behind stays inert).
+
+## Animated weather icons
+
+The current conditions and each forecast day show an animated icon (sun, moon, clouds, fog, drizzle, rain,
+heavy rain, snow, snowfall, thunderstorm, hail; day and night variants).
+
+- **Library** — [`lottie-web`](https://github.com/airbnb/lottie-web) 5.13.0 (MIT, pinned), using only its
+  SVG-only **light** build: no expression engine, so no `eval`.
+- **Artwork and licence** — all 13 animations are original. They are drawn from simple shapes by
+  `scripts/generate-lottie.mjs` (`npm run lottie`) and committed to `src/assets/lottie/`. No third-party
+  animation files are used, so there is no external asset licence to track; they are covered by this
+  project's own licence.
+- **Theming** — layers carry a class (`wb-sun`, `wb-cloud`, …) and `globals.css` maps it to the
+  `--weather-*` design tokens, so one asset follows light and dark mode.
+- **Loading** — the player (~47 KB gzip) and each animation (0.4–1.4 KB gzip) are separate lazy chunks; the
+  main bundle grew by about 1 KB gzip. They are precached by the service worker, so the icons also animate
+  offline. That adds 14 files (the player and 13 animations; about 250 KB, ~60 KB compressed) to the one-time background precache.
+- **No layout shift** — the icon tile has a fixed size and shows the static icon first; the animation
+  replaces it only once it is on screen.
+- **Fallbacks** — if the player or an animation is missing, corrupt or fails, the static icon stays and
+  nothing is logged as an error. Animation data is validated before use.
+- **Reduced motion** — respected live. With the preference on, no animation is loaded or drawn; switching it
+  on while the app is open removes them.
+- **Cost** — animations play only while on screen and while the tab is visible, and are destroyed when
+  removed.
+- **Accessibility** — decorative: the tile is `aria-hidden`, nothing in it is focusable and it has no name,
+  so screen readers announce nothing extra. The condition is always written next to it ("Partly cloudy").
+- Navigation, settings and control icons are deliberately **not** animated.
+
 ## Weather data
 
 Weather comes from the free, keyless [Open-Meteo](https://open-meteo.com/en/docs) forecast API
@@ -202,12 +262,17 @@ the app shows the required "Weather data by Open-Meteo.com" attribution.
 | `npm run lint`      | ESLint                                          |
 | `npm test`          | Unit/component tests (Vitest + Testing Library) |
 | `npm run test:e2e`  | Playwright e2e against the production build     |
+| `npm run verify`    | Typecheck, lint, unit tests, e2e and build, in order, stopping at the first failure |
+| `npm run icons`     | Regenerate the PWA icons (`scripts/generate-icons.mjs`) |
+| `npm run lottie`    | Regenerate the animated weather icons (`scripts/generate-lottie.mjs`) |
 
 First e2e run needs a browser: `npx playwright install chromium`.
 
 The e2e suite intercepts weather and geocoding requests (in the tests only) so loading, failure,
 retry and fallback states are deterministic. It builds the app with a dummy
 `VITE_GEODB_API_KEY=e2e-test-key` so the GeoDB path is exercised; a real key in `.env` is never used.
+The accessibility specs use `@axe-core/playwright` (a dev-only dependency). The live-API tests (below)
+are skipped unless you opt in. Everything else runs in headless Chromium only.
 A separate opt-in test calls the **real** APIs (weather and keyless geocoding):
 
 ```bash
@@ -228,14 +293,16 @@ src/
   hooks/      useTheme, useUnits, useFavourites, useSelectedCity, useWeather, useOnlineStatus, useCitySearch,
               useReminderPreference, useNotificationPermission, useReminders, useNow
   services/   weatherApi, weatherCache (IndexedDB), citySearch (+ geoDbApi, openMeteoGeocodingApi, http),
-              notificationService, reminderWeather, storageService
+              notificationService, reminderWeather, storageService, weatherAnimations (lazy Lottie loading)
+  assets/lottie/  original animated weather icons (generated)
   pwa/        serviceWorker (registration + update state)
-scripts/      generate-icons.mjs
   types/      weather, city, preferences
   utils/      weatherCodes, temperature, date, wind, reminder, validation, city, cn, constants
   styles/     globals.css  ← design tokens (light + dark)
-e2e/          Playwright specs (responsive, a11y, theme, contrast, weather, search, units, favourites,
-              navigation, pwa, offline, notifications)
+scripts/      generate-icons.mjs (PWA icons), generate-lottie.mjs (animated weather icons)
+e2e/          Playwright specs (responsive, a11y-*, layout-short, reflow, weather-animation, theme, contrast,
+              weather, search, units, favourites, navigation, pwa, offline, notifications)
+e2e/support/  shared setup; audit.ts (page measurements) and states.ts (reachable screen states)
 ```
 
 ## Design system

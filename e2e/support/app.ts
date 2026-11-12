@@ -53,6 +53,6 @@ export async function seed(page: Page, key: string, value: unknown) {
 export async function search(page: Page, text: string, optionName: RegExp) {
   await searchBox(page).fill(text)
   await page.getByRole('option', { name: optionName }).click()
-  await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+  await expect(page.getByText('7 degrees Celsius')).toBeVisible()
 }
 
