@@ -2,6 +2,9 @@ import { readFile, writeFile } from 'node:fs/promises'
 
 import { expect, test, type BrowserContext, type Page } from '@playwright/test'
 
+import { mockApis, search } from './support/app.ts'
+import { waitForServiceWorkerControl } from './support/serviceWorker.ts'
+
 interface Manifest {
   id: string
   name: string
@@ -21,14 +24,6 @@ async function getManifest(page: Page): Promise<Manifest> {
   const response = await page.request.get(href!)
   expect(response.ok()).toBe(true)
   return (await response.json()) as Manifest
-}
-
-/** Wait until the worker is active AND controlling this page (it claims clients on first install). */
-async function waitForServiceWorkerControl(page: Page) {
-  await page.evaluate(async () => {
-    await navigator.serviceWorker.ready
-  })
-  await expect.poll(() => page.evaluate(() => navigator.serviceWorker.controller !== null)).toBe(true)
 }
 
 test.describe('web app manifest', () => {
@@ -293,5 +288,45 @@ test.describe('service worker updates', () => {
     await context.setOffline(true)
     await page.reload()
     await expect(page.getByRole('heading', { level: 1, name: 'No city selected' })).toBeVisible()
+  })
+
+  test('saved weather survives a service worker update and is still shown offline afterwards', async ({ page, context }) => {
+    await mockApis(page)
+    await page.goto('/')
+    await search(page, 'lon', /London/)
+    await waitForServiceWorkerControl(page)
+    const countSaved = () =>
+      page.evaluate(async () => {
+        const dbs = await indexedDB.databases()
+        if (!dbs.some((d) => d.name === 'weatherboard')) return 0
+        return new Promise<number>((resolve) => {
+          const open = indexedDB.open('weatherboard')
+          open.onsuccess = () => {
+            const db = open.result
+            const count = db.transaction('weather-snapshots').objectStore('weather-snapshots').count()
+            count.onsuccess = () => {
+              db.close()
+              resolve(count.result)
+            }
+          }
+        })
+      })
+    await expect.poll(countSaved).toBe(1)
+
+    await publishNewVersion()
+    await checkForUpdate(page)
+    await expect(page.getByRole('button', { name: 'Reload' })).toBeVisible({ timeout: 15_000 })
+    expect(await countSaved()).toBe(1) // installing the new version touched nothing
+
+    const reloaded = page.waitForEvent('load')
+    await page.getByRole('button', { name: 'Reload' }).click()
+    await reloaded
+    await waitForServiceWorkerControl(page)
+    expect(await countSaved()).toBe(1) // …and neither did activating it
+
+    await context.setOffline(true)
+    await page.reload()
+    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(page.getByRole('status', { name: 'Saved weather' })).toContainText('Showing saved weather')
   })
 })
