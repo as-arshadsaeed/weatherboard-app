@@ -61,6 +61,13 @@ for (const vp of [
           expect(overlap, `cards ${i} and ${j} overlap`).toBe(false)
         }
       }
+      if (process.env.SCREENSHOT_DIR) {
+        await page.screenshot({ path: `${process.env.SCREENSHOT_DIR}/weather-${vp.name}-light.png`, fullPage: true })
+        await page.getByRole('button', { name: /switch to dark/i }).click()
+        await page.waitForTimeout(500)
+        await page.mouse.move(0, 0)
+        await page.screenshot({ path: `${process.env.SCREENSHOT_DIR}/weather-${vp.name}-dark.png`, fullPage: true })
+      }
       expect(errors).toEqual([])
     })
   })
@@ -114,7 +121,7 @@ test.describe('loading state', () => {
     release()
     await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
     const mainAfter = await page.locator('main').evaluate((el) => el.getBoundingClientRect().height)
-    expect(Math.abs(mainAfter - mainBefore)).toBeLessThanOrEqual(48)
+    expect(Math.abs(mainAfter - mainBefore)).toBeLessThanOrEqual(24)
   })
 })
 
@@ -205,5 +212,60 @@ test.describe('accessibility', () => {
     await expect(icon).toBeVisible()
     const duration = await icon.evaluate((el) => getComputedStyle(el).animationDuration)
     expect(parseFloat(duration)).toBeLessThan(0.01)
+  })
+})
+
+test.describe('detail cards', () => {
+  const card = (page: Page, label: string) =>
+    page.locator('dt', { hasText: new RegExp(`^${label}$`) }).locator('xpath=..')
+
+  test('show humidity, wind, precipitation, sunrise and sunset from the API', async ({ page }) => {
+    await mockWeather(page)
+    await page.goto(LONDON_URL)
+    await expect(page.getByRole('heading', { level: 2, name: 'Today’s details' })).toBeVisible()
+
+    await expect(card(page, 'Humidity')).toContainText('64%')
+    await expect(card(page, 'Wind speed')).toContainText('12 km/h')
+    await expect(card(page, 'Wind direction')).toContainText('From N')
+    await expect(card(page, 'Precipitation')).toContainText('0%')
+    await expect(card(page, 'Sunrise')).toContainText(/0?7:13/)
+    await expect(card(page, 'Sunset')).toContainText(/(4:15 PM|16:15)/)
+  })
+
+  test('missing values read "Not available" and never break the rest of the dashboard', async ({ page }) => {
+    const body = forecastBody() as ReturnType<typeof forecastBody> & Record<string, any>
+    body.current.relative_humidity_2m = null as never
+    body.current.wind_speed_10m = null as never
+    body.current.apparent_temperature = null as never
+    body.daily.precipitation_probability_max = [null, null, null, null, null] as never
+    body.daily.sunrise = ['', '', '', '', ''] as never
+    await page.route(API_GLOB, (route) => route.fulfill({ json: body }))
+    await page.goto(LONDON_URL)
+
+    await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
+    await expect(card(page, 'Humidity')).toContainText('Not available')
+    await expect(card(page, 'Wind speed')).toContainText('Not available')
+    await expect(card(page, 'Precipitation')).toContainText('Not available')
+    await expect(card(page, 'Sunrise')).toContainText('Not available')
+    await expect(card(page, 'Feels like')).toContainText('Not available')
+    await expect(card(page, 'Sunset')).toContainText(/(4:15 PM|16:15)/) // unaffected
+    await expect(page.getByRole('list').getByRole('listitem')).toHaveCount(5)
+  })
+
+  test('loading skeleton reserves the details space (no large layout shift)', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    await page.route(API_GLOB, async (route) => {
+      await gate
+      await route.fulfill({ json: forecastBody() })
+    })
+    await page.goto(LONDON_URL)
+    await expect(page.getByRole('status').filter({ hasText: 'Loading weather' })).toBeVisible()
+    const before = await page.locator('main').evaluate((el) => el.getBoundingClientRect().height)
+    release()
+    await expect(card(page, 'Humidity')).toBeVisible()
+    const after = await page.locator('main').evaluate((el) => el.getBoundingClientRect().height)
+    expect(Math.abs(after - before)).toBeLessThanOrEqual(24)
   })
 })

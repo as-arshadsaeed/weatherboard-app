@@ -6,6 +6,7 @@ import { useNow } from '@/hooks/useNow'
 import type { City } from '@/types/city'
 import type { TemperatureUnit, WeatherReport } from '@/types/weather'
 import { formatLocation } from '@/utils/city'
+import { UNAVAILABLE_TEXT } from '@/utils/constants'
 import { formatLocalDate, formatLocalTime } from '@/utils/date'
 import { formatDegrees, formatTemperature, roundTemperature, temperatureUnitLetter } from '@/utils/temperature'
 import { describeWeather } from '@/utils/weatherCodes'
@@ -14,6 +15,8 @@ interface CurrentWeatherProps {
   city: City
   report: WeatherReport
   unit: TemperatureUnit
+  /** Optional control rendered under the location (e.g. the favourite button). */
+  action?: ReactNode
 }
 
 function Stat({
@@ -24,7 +27,8 @@ function Stat({
 }: {
   icon: ReactNode
   label: string
-  value: string
+  /** Null when the API did not provide the value. */
+  value: string | null
   accessibleValue: string
 }) {
   return (
@@ -33,14 +37,18 @@ function Stat({
         {icon}
         {label}
       </dt>
-      <dd className="tabular text-lg font-semibold tracking-tight" aria-label={accessibleValue}>
-        {value}
-      </dd>
+      {value === null ? (
+        <dd className="text-sm font-medium text-muted-foreground">{UNAVAILABLE_TEXT}</dd>
+      ) : (
+        <dd className="tabular text-lg font-semibold tracking-tight" aria-label={accessibleValue}>
+          {value}
+        </dd>
+      )}
     </div>
   )
 }
 
-export function CurrentWeather({ city, report, unit }: CurrentWeatherProps) {
+export function CurrentWeather({ city, report, unit, action }: CurrentWeatherProps) {
   const now = useNow()
   const { current, timezone } = report
   const today = report.daily[0]
@@ -68,6 +76,7 @@ export function CurrentWeather({ city, report, unit }: CurrentWeatherProps) {
             </time>{' '}
             <span className="text-muted-foreground/80">local time</span>
           </p>
+          {action && <div className="mt-3">{action}</div>}
         </div>
         <WeatherIcon
           code={current.weatherCode}
@@ -108,8 +117,16 @@ export function CurrentWeather({ city, report, unit }: CurrentWeatherProps) {
           <Stat
             icon={<Thermometer className="size-3.5" aria-hidden="true" />}
             label="Feels like"
-            value={formatDegrees(current.apparentTemperatureC, unit)}
-            accessibleValue={formatTemperature(current.apparentTemperatureC, unit)}
+            value={
+              current.apparentTemperatureC === null
+                ? null
+                : formatDegrees(current.apparentTemperatureC, unit)
+            }
+            accessibleValue={
+              current.apparentTemperatureC === null
+                ? UNAVAILABLE_TEXT
+                : formatTemperature(current.apparentTemperatureC, unit)
+            }
           />
           <Stat
             icon={<ArrowUp className="size-3.5" aria-hidden="true" />}

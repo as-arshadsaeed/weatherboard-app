@@ -43,13 +43,24 @@ export function WeatherSkeleton({ city }: { city: City }) {
       </section>
 
       <div>
-        <Skeleton className="mb-3 h-5 w-28" />
-        <div className="grid gap-3 lg:grid-cols-5">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="min-h-[5.5rem] rounded-2xl lg:min-h-[14.5rem]" />
+        <Skeleton className="mb-3 h-5 w-32" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="min-h-[6.5rem] rounded-2xl" />
           ))}
         </div>
       </div>
+
+      <div>
+        <Skeleton className="mb-3 h-5 w-28" />
+        <div className="grid gap-3 lg:grid-cols-5">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="min-h-[5.5rem] rounded-2xl lg:min-h-[15rem]" />
+          ))}
+        </div>
+      </div>
+
+      <Skeleton className="h-4 w-44" />
     </div>
   )
 }
