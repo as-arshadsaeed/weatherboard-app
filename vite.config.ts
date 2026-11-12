@@ -56,6 +56,11 @@ export default defineConfig({
       devOptions: { enabled: false },
     }),
   ],
+  define: {
+    // Lets the app know it is a Vercel *production* build (analytics is off for previews and local builds).
+    // Empty when system environment variables are not exposed to the build, or outside Vercel.
+    __VERCEL_ENV__: JSON.stringify(process.env.VERCEL_ENV ?? ''),
+  },
   resolve: {
     alias: { '@': path.resolve(import.meta.dirname, 'src') },
   },
