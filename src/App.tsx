@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { useUnits } from '@/hooks/useUnits'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { FavouriteCities } from '@/components/favourites/FavouriteCities'
@@ -10,6 +11,7 @@ import { parseCityFromSearch } from '@/utils/validation'
 
 export default function App() {
   // A location in the URL (?lat=&lon=&name=) still works as a deep link; searching replaces it.
+  const { unit, setUnit } = useUnits()
   const [city, setCity] = useState<City | null>(() => parseCityFromSearch(window.location.search))
 
   return (
@@ -20,10 +22,10 @@ export default function App() {
       >
         Skip to main content
       </a>
-      <Header onSelectCity={setCity} />
+      <Header onSelectCity={setCity} unit={unit} onUnitChange={setUnit} />
       <div className="mx-auto grid max-w-[88rem] gap-6 px-4 py-6 md:grid-cols-[15rem_minmax(0,1fr)] md:px-6 md:py-8 xl:grid-cols-[18rem_minmax(0,1fr)]">
         <main id="main" tabIndex={-1} className="min-w-0 outline-none">
-          {city ? <WeatherDashboard city={city} unit="celsius" /> : <NoCitySelected />}
+          {city ? <WeatherDashboard city={city} unit={unit} /> : <NoCitySelected />}
         </main>
         <Sidebar>
           <FavouriteCities />

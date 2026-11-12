@@ -152,4 +152,58 @@ describe('dashboard shell', () => {
       expect(screen.queryByRole('heading', { name: 'London' })).toBeNull()
     })
   })
+
+  describe('temperature unit', () => {
+    function stubForecast() {
+      const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(jsonResponse(buildForecastResponse())))
+      vi.stubGlobal('fetch', fetchMock)
+      return fetchMock
+    }
+    const open = () => window.history.replaceState({}, '', '/?lat=51.5&lon=-0.12&name=London')
+
+    it('converts the current temperature, feels-like, high/low and every forecast card', async () => {
+      const user = userEvent.setup()
+      stubForecast()
+      open()
+      render(<App />)
+
+      expect(await screen.findByLabelText('7 degrees Celsius')).toBeVisible()
+      await user.click(screen.getByRole('button', { name: 'Fahrenheit (°F)' }))
+
+      expect(screen.getByLabelText('44 degrees Fahrenheit')).toBeVisible() // 6.7°C
+      expect(screen.getByLabelText('37°F')).toBeInTheDocument() // feels like 2.9°C
+      expect(screen.getByLabelText('47°F')).toBeInTheDocument() // high 8.4°C
+      expect(screen.getByLabelText('40°F')).toBeInTheDocument() // low 4.7°C
+      expect(screen.getByRole('listitem', { name: 'Saturday 14 November' })).toBeVisible()
+      expect(screen.getByLabelText('High 49°F, low 32°F')).toBeInTheDocument() // 9.3°C / 0.1°C
+      // Nothing is left in Celsius, so units are never mixed.
+      expect(within(screen.getByRole('main')).queryByLabelText(/Celsius|\d°C/)).toBeNull()
+    })
+
+    it('does not refetch weather when the unit changes', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubForecast()
+      open()
+      render(<App />)
+      await screen.findByLabelText('7 degrees Celsius')
+
+      await user.click(screen.getByRole('button', { name: 'Fahrenheit (°F)' }))
+      await user.click(screen.getByRole('button', { name: 'Celsius (°C)' }))
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('remembers the unit after a reload', async () => {
+      const user = userEvent.setup()
+      stubForecast()
+      open()
+      const first = render(<App />)
+      await screen.findByLabelText('7 degrees Celsius')
+      await user.click(screen.getByRole('button', { name: 'Fahrenheit (°F)' }))
+      first.unmount()
+
+      render(<App />)
+      expect(await screen.findByLabelText('44 degrees Fahrenheit')).toBeVisible()
+      expect(screen.getByRole('button', { name: 'Fahrenheit (°F)' })).toHaveAttribute('aria-pressed', 'true')
+    })
+  })
 })
