@@ -5,11 +5,12 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { FavouriteCities } from '@/components/favourites/FavouriteCities'
 import { NoCitySelected } from '@/components/weather/NoCitySelected'
 import { WeatherDashboard } from '@/components/weather/WeatherDashboard'
+import type { City } from '@/types/city'
 import { parseCityFromSearch } from '@/utils/validation'
 
 export default function App() {
-  // Temporary until city search (Phase 3): a location can be supplied as ?lat=&lon=&name=.
-  const [city] = useState(() => parseCityFromSearch(window.location.search))
+  // A location in the URL (?lat=&lon=&name=) still works as a deep link; searching replaces it.
+  const [city, setCity] = useState<City | null>(() => parseCityFromSearch(window.location.search))
 
   return (
     <>
@@ -19,7 +20,7 @@ export default function App() {
       >
         Skip to main content
       </a>
-      <Header />
+      <Header onSelectCity={setCity} />
       <div className="mx-auto grid max-w-[88rem] gap-6 px-4 py-6 md:grid-cols-[15rem_minmax(0,1fr)] md:px-6 md:py-8 xl:grid-cols-[18rem_minmax(0,1fr)]">
         <main id="main" tabIndex={-1} className="min-w-0 outline-none">
           {city ? <WeatherDashboard city={city} unit="celsius" /> : <NoCitySelected />}

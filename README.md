@@ -3,10 +3,10 @@
 A responsive, installable weather dashboard PWA: city search, current conditions, 5-day forecast,
 favourite cities, offline access, daily reminders, light/dark themes and °C/°F.
 
-> **Status: Phase 2 of 8 complete** (foundation + live weather). Real current conditions and a
-> 5-day forecast from Open-Meteo are displayed for a location. City search, favourites, units,
-> PWA/offline and notifications are not built yet — see [CLAUDE.md](CLAUDE.md) for the spec and
-> phase plan. There is no mock weather data in the app.
+> **Status: Phase 3 of 8 complete** (foundation, live weather, city search). Search any city,
+> see real current conditions and a 5-day forecast. Favourites, units, detail cards, PWA/offline and
+> notifications are not built yet — see [CLAUDE.md](CLAUDE.md) for the spec and phase plan. There is
+> no mock weather data in the app.
 
 ## Requirements
 
@@ -16,28 +16,52 @@ favourite cities, offline access, daily reminders, light/dark themes and °C/°F
 
 ```bash
 npm install
-cp .env.example .env     # optional until Phase 3
+cp .env.example .env     # optional: add a GeoDB key (search works without one)
 npm run dev              # http://localhost:5173
 ```
 
-## Viewing weather (until city search lands in Phase 3)
+## Searching for a city
 
-There is no search yet, so pass a location in the URL:
+Type at least 2 characters in the header search. Suggestions (city, region, country; at most 6)
+appear after a ~250 ms pause. Use **↑/↓** to move, **Enter** to select, **Esc** to close, or click/tap
+a suggestion. Only suggested cities can be chosen; free text is never submitted. Selecting a city
+loads its weather using the city's coordinates (and timezone when known).
+
+| State                     | What you see                                                                 |
+| ------------------------- | ---------------------------------------------------------------------------- |
+| Empty field, then blur    | Inline error: "Enter a city name to search."                                 |
+| 1 character               | Guidance: "Type at least 2 characters to search for a city."                 |
+| Searching                 | "Searching…" with a spinner                                                  |
+| No matches                | "No cities found. Try another spelling or search by country."                |
+| Network failure           | "Unable to search cities. Check your internet connection and try again."     |
+| Service problem / limits  | "City search is temporarily unavailable. Please try again." + **Try again**  |
+
+### Providers
+
+1. **GeoDB Cities** (RapidAPI) when `VITE_GEODB_API_KEY` is set.
+2. **Open-Meteo geocoding** (free, no key) when there is no key, or automatically when GeoDB fails
+   (network error, timeout, rate limit, outage or an unreadable response). An empty GeoDB result is
+   treated as "no cities" and is not retried.
+
+Recent successful searches are cached in memory (10 minutes, 50 searches).
+
+> **GeoDB key security:** `VITE_*` variables are embedded in the public JavaScript bundle, so the key
+> is **not secret**. In the RapidAPI dashboard restrict it (allowed domains/referrers) and set a quota.
+> The free GeoDB plan allows roughly one request per second; the Open-Meteo fallback absorbs
+> rate-limit errors. If you need the key to stay private, put a small server-side proxy in front
+> of GeoDB (this would be a documented departure from the client-only design).
+> GeoDB's live behaviour has not been verified in this repo (no key was available); the Open-Meteo path has.
+
+### Deep link
+
+A location can still be supplied in the URL as the initial city:
 
 ```text
 http://localhost:5173/?lat=35.6762&lon=139.6503&name=Tokyo&country=Japan&region=Tokyo
 ```
 
-| Parameter | Required | Notes                                                        |
-| --------- | -------- | ------------------------------------------------------------ |
-| `lat`     | yes      | −90 … 90                                                     |
-| `lon`     | yes      | −180 … 180                                                   |
-| `name`    | no       | Display name; defaults to the formatted coordinates          |
-| `country` | no       | Shown under the name                                         |
-| `region`  | no       | Shown under the name                                         |
-| `tz`      | no       | IANA timezone (e.g. `Asia/Tokyo`); otherwise resolved by API |
-
-Invalid coordinates show "Weather data is unavailable for this location." and make no request.
+`lat` (−90…90) and `lon` (−180…180) are required; `name`, `country`, `region` and `tz` (IANA timezone)
+are optional. Invalid coordinates show "Weather data is unavailable for this location." and make no request.
 
 ## Weather data
 
@@ -62,8 +86,10 @@ the app shows the required "Weather data by Open-Meteo.com" attribution.
 
 First e2e run needs a browser: `npx playwright install chromium`.
 
-The e2e suite intercepts Open-Meteo requests (in the tests only) so loading, failure and retry
-states are deterministic. A separate opt-in test calls the **real** API:
+The e2e suite intercepts weather and geocoding requests (in the tests only) so loading, failure,
+retry and fallback states are deterministic. It builds the app with a dummy
+`VITE_GEODB_API_KEY=e2e-test-key` so the GeoDB path is exercised; a real key in `.env` is never used.
+A separate opt-in test calls the **real** APIs (weather and keyless geocoding):
 
 ```bash
 WEATHER_LIVE=1 npx playwright test e2e/weather-live.spec.ts --workers=1
@@ -73,19 +99,19 @@ WEATHER_LIVE=1 npx playwright test e2e/weather-live.spec.ts --workers=1
 
 | Variable             | Required | Notes                                                                                      |
 | -------------------- | -------- | ------------------------------------------------------------------------------------------ |
-| `VITE_GEODB_API_KEY` | Phase 3+ | **Public once built** — browser env vars are not secret. Restrict by domain and set quota. |
+| `VITE_GEODB_API_KEY` | No       | Enables GeoDB search. **Public once built** — restrict by domain and set a quota. Without it, search uses Open-Meteo geocoding. |
 
 ## Project structure
 
 ```text
 src/
   components/{layout,weather,search,favourites,settings,ui}
-  hooks/      useTheme, useWeather (race-safe loading), useNow
-  services/   weatherApi (Open-Meteo), storageService (safe localStorage with in-memory fallback)
+  hooks/      useTheme, useWeather, useCitySearch (debounced, cancellable), useNow
+  services/   weatherApi, citySearch (+ geoDbApi, openMeteoGeocodingApi, http), storageService
   types/      weather, city, preferences
   utils/      weatherCodes, temperature, date, validation, city, cn, constants
   styles/     globals.css  ← design tokens (light + dark)
-e2e/          Playwright specs (responsive, a11y, theme, contrast, weather states)
+e2e/          Playwright specs (responsive, a11y, theme, contrast, weather states, search)
 ```
 
 ## Design system

@@ -1,13 +1,16 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from '@/App'
+import { openMeteoResponse, openMeteoResult } from '@/test/fixtures/geocoding'
 import { buildForecastResponse, jsonResponse } from '@/test/fixtures/openMeteo'
+import { clearCitySearchCache } from '@/services/citySearch'
 import { resetStorageStateForTests } from '@/services/storageService'
 
 beforeEach(() => {
   resetStorageStateForTests()
+  clearCitySearchCache()
   vi.stubGlobal('matchMedia', () => ({
     matches: false,
     addEventListener: () => {},
@@ -45,11 +48,11 @@ describe('dashboard shell', () => {
     expect(within(panel).getByLabelText('0 of 5 favourites saved')).toBeVisible()
   })
 
-  it('renders the city search as clearly disabled until it is built', () => {
+  it('renders an enabled, labelled city search combobox', () => {
     render(<App />)
-    const search = screen.getByRole('searchbox', { name: 'Search for a city' })
-    expect(search).toBeDisabled()
-    expect(search).toHaveAccessibleDescription('City search is not available yet.')
+    const search = screen.getByRole('combobox', { name: 'Search for a city' })
+    expect(search).toBeEnabled()
+    expect(search).toHaveAttribute('aria-autocomplete', 'list')
   })
 
   it('toggles the theme from the header without reloading', async () => {
@@ -85,5 +88,68 @@ describe('dashboard shell', () => {
     await screen.findByLabelText('7 degrees Celsius')
     await user.click(screen.getByRole('button', { name: 'Switch to dark theme' }))
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  describe('searching for a city', () => {
+    const tokyo = openMeteoResult({
+      id: 1850147,
+      name: 'Tokyo',
+      latitude: 35.6895,
+      longitude: 139.69171,
+      timezone: 'Asia/Tokyo',
+      country: 'Japan',
+      admin1: 'Tokyo',
+      population: 8336599,
+    })
+
+    function stubNetwork() {
+      const fetchMock = vi.fn((url: string) => {
+        const host = new URL(url).host
+        if (host === 'geocoding-api.open-meteo.com') {
+          return Promise.resolve(jsonResponse(openMeteoResponse([tokyo])))
+        }
+        return Promise.resolve(jsonResponse(buildForecastResponse({ timezone: 'Asia/Tokyo' })))
+      })
+      vi.stubGlobal('fetch', fetchMock)
+      return fetchMock
+    }
+
+    it('selecting a suggestion loads weather for that city using its coordinates', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubNetwork()
+      render(<App />)
+
+      expect(screen.getByText('No city selected')).toBeVisible()
+      await user.type(screen.getByRole('combobox', { name: 'Search for a city' }), 'tok')
+      await user.click(await screen.findByRole('option', { name: /Tokyo/ }))
+
+      expect(await screen.findByLabelText('7 degrees Celsius')).toBeVisible()
+      expect(screen.getByRole('heading', { level: 1, name: 'Tokyo' })).toBeVisible()
+      expect(screen.queryByText('No city selected')).toBeNull()
+
+      const forecastCall = fetchMock.mock.calls
+        .map((c) => new URL(c[0]))
+        .find((u) => u.host === 'api.open-meteo.com')
+      expect(forecastCall?.searchParams.get('latitude')).toBe('35.6895')
+      expect(forecastCall?.searchParams.get('longitude')).toBe('139.69171')
+      expect(forecastCall?.searchParams.get('timezone')).toBe('Asia/Tokyo')
+    })
+
+    it('selecting a different city replaces the weather being shown', async () => {
+      const user = userEvent.setup()
+      stubNetwork()
+      window.history.replaceState({}, '', '/?lat=51.5&lon=-0.12&name=London')
+      render(<App />)
+      await screen.findByLabelText('7 degrees Celsius')
+      expect(screen.getByRole('heading', { level: 1, name: 'London' })).toBeVisible()
+
+      await user.type(screen.getByRole('combobox', { name: 'Search for a city' }), 'tok')
+      await user.click(await screen.findByRole('option', { name: /Tokyo/ }))
+
+      await waitFor(() =>
+        expect(screen.getByRole('heading', { level: 1, name: 'Tokyo' })).toBeVisible(),
+      )
+      expect(screen.queryByRole('heading', { name: 'London' })).toBeNull()
+    })
   })
 })

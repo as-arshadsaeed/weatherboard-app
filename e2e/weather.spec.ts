@@ -90,13 +90,13 @@ test.describe('loading state', () => {
     })
     await page.goto(LONDON_URL)
 
-    await expect(page.getByRole('status')).toContainText('Loading weather for London')
+    await expect(page.getByRole('status').filter({ hasText: 'Loading weather' })).toContainText('Loading weather for London')
     await expect(page.getByRole('heading', { level: 1, name: 'London' })).toBeVisible()
     await expect(page.locator('main')).not.toContainText(/\d\s*°/)
 
     release()
     await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
-    await expect(page.getByRole('status')).toHaveCount(0)
+    await expect(page.getByRole('status').filter({ hasText: 'Loading weather' })).toHaveCount(0)
   })
 
   test('does not shift the layout noticeably when data arrives', async ({ page }) => {
@@ -108,7 +108,7 @@ test.describe('loading state', () => {
       await route.fulfill({ json: forecastBody() })
     })
     await page.goto(LONDON_URL)
-    await expect(page.getByRole('status')).toBeVisible()
+    await expect(page.getByRole('status').filter({ hasText: 'Loading weather' })).toBeVisible()
     const mainBefore = await page.locator('main').evaluate((el) => el.getBoundingClientRect().height)
 
     release()
