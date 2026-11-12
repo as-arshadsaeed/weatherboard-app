@@ -11,6 +11,7 @@ const KEY_PREFIX = 'weatherboard:'
 
 const memoryStore = new Map<string, string>()
 let persistent = true
+const statusListeners = new Set<() => void>()
 
 function namespaced(key: string): string {
   return `${KEY_PREFIX}${key}`
@@ -21,13 +22,44 @@ export function isStoragePersistent(): boolean {
   return persistent
 }
 
+/**
+ * Subscribe to persistence status changes (for useSyncExternalStore). Notifications are deferred
+ * to a microtask so a read performed during render never updates another component mid-render.
+ */
+export function subscribeToStorageStatus(listener: () => void): () => void {
+  statusListeners.add(listener)
+  return () => {
+    statusListeners.delete(listener)
+  }
+}
+
+function setPersistent(next: boolean): void {
+  if (persistent === next) return
+  persistent = next
+  queueMicrotask(() => statusListeners.forEach((listener) => listener()))
+}
+
+/**
+ * Check up front whether writes work, so the "preferences will not persist" notice can show before
+ * the user's first save instead of only after it silently fails.
+ */
+export function probeStorage(): void {
+  const probeKey = namespaced('__probe')
+  try {
+    window.localStorage.setItem(probeKey, '1')
+    window.localStorage.removeItem(probeKey)
+    setPersistent(true)
+  } catch {
+    setPersistent(false)
+  }
+}
+
 function readRaw(key: string): string | null {
   try {
-    const value = window.localStorage.getItem(namespaced(key))
-    persistent = true
-    return value
+    // A successful read says nothing about whether writes work, so it never flips the status back.
+    return window.localStorage.getItem(namespaced(key))
   } catch {
-    persistent = false
+    setPersistent(false)
     return memoryStore.get(key) ?? null
   }
 }
@@ -68,9 +100,9 @@ export function setStoredValue(key: string, value: unknown): void {
   try {
     window.localStorage.setItem(namespaced(key), raw)
     memoryStore.delete(key)
-    persistent = true
+    setPersistent(true)
   } catch {
-    persistent = false
+    setPersistent(false)
     memoryStore.set(key, raw)
   }
 }
@@ -80,7 +112,7 @@ export function removeStoredValue(key: string): void {
   try {
     window.localStorage.removeItem(namespaced(key))
   } catch {
-    persistent = false
+    setPersistent(false)
   }
 }
 

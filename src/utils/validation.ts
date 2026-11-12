@@ -1,4 +1,5 @@
 import type { City } from '@/types/city'
+import { isSameCity } from '@/utils/city'
 
 export function isValidLatitude(value: number): boolean {
   return Number.isFinite(value) && value >= -90 && value <= 90
@@ -50,4 +51,37 @@ export function parseCityFromSearch(search: string): City | null {
 /** Trim and collapse internal whitespace so "  new   york " and "new york" are the same search. */
 export function normalizeSearchQuery(query: string): string {
   return query.trim().replace(/\s+/g, ' ')
+}
+
+/** Runtime check for a City read from storage (never trust persisted data). */
+export function isCity(value: unknown): value is City {
+  if (typeof value !== 'object' || value === null) return false
+  const city = value as Record<string, unknown>
+  const optionalString = (v: unknown) => v === undefined || typeof v === 'string'
+  return (
+    typeof city.id === 'string' &&
+    city.id !== '' &&
+    typeof city.name === 'string' &&
+    city.name.trim() !== '' &&
+    typeof city.latitude === 'number' &&
+    typeof city.longitude === 'number' &&
+    areValidCoordinates(city.latitude, city.longitude) &&
+    optionalString(city.region) &&
+    optionalString(city.country) &&
+    optionalString(city.timezone)
+  )
+}
+
+/**
+ * Salvage whatever is valid from a stored list: drops corrupt entries and duplicates (by identity
+ * or coordinates), and keeps at most `max`. A partly corrupted list loses only its bad entries.
+ */
+export function sanitizeCities(value: unknown, max: number): City[] {
+  if (!Array.isArray(value)) return []
+  const cities: City[] = []
+  for (const item of value as unknown[]) {
+    if (cities.length >= max) break
+    if (isCity(item) && !cities.some((existing) => isSameCity(existing, item))) cities.push(item)
+  }
+  return cities
 }
