@@ -4,16 +4,17 @@ import { isAnalyticsEnabled, redactAnalyticsEvent } from '@/utils/analytics'
 
 describe('isAnalyticsEnabled', () => {
   it.each([
-    ['unset flag, local or tests (no Vercel env)', undefined, undefined, false],
-    ['unset flag, empty Vercel env', undefined, '', false],
-    ['unset flag, Vercel preview build', undefined, 'preview', false],
-    ['unset flag, Vercel development build', undefined, 'development', false],
-    ['unset flag, Vercel production build', undefined, 'production', true],
-    ['explicit on, anywhere', 'on', undefined, true],
-    ['explicit on is case/space tolerant', ' ON ', 'preview', true],
-    ['explicit off beats a production build', 'off', 'production', false],
-    ['an unrecognised flag falls back to the environment (preview)', 'true', 'preview', false],
-    ['an unrecognised flag falls back to the environment (production)', 'yes', 'production', true],
+    ['nothing set (local build, tests)', undefined, undefined, false],
+    ['nothing set, a Vercel production build (opt-in only: deploying changes nothing)', undefined, 'production', false],
+    ['empty flag', '', 'production', false],
+    ['the flag set to off', 'off', 'production', false],
+    ['an unrecognised value is not "on"', 'true', 'production', false],
+    ['on, Vercel production build', 'on', 'production', true],
+    ['on, Vercel system variables not exposed (empty)', 'on', '', true],
+    ['on, outside Vercel (e.g. a self-hosted build)', 'on', undefined, true],
+    ['on is case and space tolerant', ' ON ', 'production', true],
+    ['on, but a Vercel preview build: refused, so previews cannot reach production numbers', 'on', 'preview', false],
+    ['on, but a Vercel development build: refused', 'on', 'development', false],
   ])('%s', (_name, flag, vercelEnv, expected) => {
     expect(isAnalyticsEnabled(flag, vercelEnv)).toBe(expected)
   })

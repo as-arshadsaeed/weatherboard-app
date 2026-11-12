@@ -57,8 +57,8 @@ export default defineConfig({
     }),
   ],
   define: {
-    // Lets the app know it is a Vercel *production* build (analytics is off for previews and local builds).
-    // Empty when system environment variables are not exposed to the build, or outside Vercel.
+    // Lets the app refuse analytics in a Vercel preview/development build even if VITE_ANALYTICS leaked there.
+    // Empty when Vercel's system environment variables are not exposed to the build, or outside Vercel.
     __VERCEL_ENV__: JSON.stringify(process.env.VERCEL_ENV ?? ''),
   },
   resolve: {

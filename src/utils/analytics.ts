@@ -1,20 +1,19 @@
 import type { BeforeSendEvent } from '@vercel/analytics/react'
 
 /**
- * Whether Vercel Web Analytics should run in this build.
+ * Whether Vercel Web Analytics should run in this build. Strictly opt-in, so deploying this code changes
+ * nothing for visitors until someone deliberately turns it on.
  *
- * - `VITE_ANALYTICS=on` / `off` is an explicit switch (set it for the Production environment only).
- * - Otherwise it is on only for a Vercel *production* build (`VERCEL_ENV=production`, which Vercel exposes
- *   to builds when the project's system environment variables are enabled).
+ * - Off unless `VITE_ANALYTICS=on` (set it for the Production environment only).
+ * - Even when on, never in a build Vercel reports as `preview` or `development`, so a variable that was
+ *   accidentally applied to every environment cannot send preview traffic to the production numbers.
+ *   (`vercelEnv` is empty when Vercel's system environment variables are not exposed to the build, or off Vercel.)
  *
- * Local builds, tests and preview deployments therefore never send data unless someone opts in, so they
- * cannot pollute production numbers.
+ * Local builds, tests and previews therefore never send data.
  */
 export function isAnalyticsEnabled(flag: string | undefined, vercelEnv: string | undefined): boolean {
-  const choice = flag?.trim().toLowerCase()
-  if (choice === 'on') return true
-  if (choice === 'off') return false
-  return vercelEnv === 'production'
+  if (flag?.trim().toLowerCase() !== 'on') return false
+  return vercelEnv !== 'preview' && vercelEnv !== 'development'
 }
 
 /**

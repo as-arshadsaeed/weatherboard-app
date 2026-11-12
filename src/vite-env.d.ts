@@ -4,7 +4,7 @@
 interface ImportMetaEnv {
   /** GeoDB Cities (RapidAPI) key. PUBLIC once built; restrict it provider-side. Optional: search falls back to Open-Meteo. */
   readonly VITE_GEODB_API_KEY?: string
-  /** "on" / "off": explicit switch for Vercel Web Analytics. Not a secret. Unset = on only for Vercel production builds. */
+  /** "on" enables Vercel Web Analytics (opt-in; ignored by Vercel preview builds). Not a secret. Unset = off. */
   readonly VITE_ANALYTICS?: string
 }
 

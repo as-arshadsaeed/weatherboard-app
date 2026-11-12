@@ -10,7 +10,7 @@ const ENABLED = isAnalyticsEnabled(import.meta.env.VITE_ANALYTICS, __VERCEL_ENV_
  * Vercel Web Analytics, mounted once at the app root (main.tsx).
  *
  * It is invisible, optional and never allowed to affect the app:
- * - off unless the build opts in (see isAnalyticsEnabled), and then loaded as a separate chunk;
+ * - off unless the build opts in with VITE_ANALYTICS=on (see isAnalyticsEnabled), and then a separate chunk;
  * - not started while offline, so there is no failing request to log;
  * - every failure (chunk missing, script blocked by an ad blocker or privacy mode) is swallowed;
  * - page views are redacted to the path alone before they are sent.
