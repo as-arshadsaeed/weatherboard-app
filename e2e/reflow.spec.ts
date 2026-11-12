@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import { asFavourite, LONDON, PARIS, seed } from './support/app.ts'
 import { API_GLOB, forecastBody } from './support/openMeteo.ts'
 
 /**
@@ -57,3 +58,45 @@ test('content reflows at 320px with text enlarged to 200%', async ({ page }) => 
   await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
   expect(await elementsOutsideViewport(page)).toEqual([])
 })
+
+test('WCAG 1.4.12 text spacing does not cut anything off at 375px', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.route(API_GLOB, (route) => route.fulfill({ json: forecastBody() }))
+  await page.goto(LONG_URL)
+  await expect(page.getByRole('heading', { level: 1, name: LONG_NAME })).toBeVisible()
+
+  await page.addStyleTag({
+    content:
+      '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important } p { margin-bottom: 2em !important }',
+  })
+  expect(await elementsOutsideViewport(page)).toEqual([])
+  // Nothing may be hidden by a fixed-height box either: text must not overflow its own element vertically.
+  const clippedText = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>('body *')]
+      .filter((el) => {
+        const s = getComputedStyle(el)
+        return !el.closest('.sr-only') && /hidden|clip/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 1 && el.children.length === 0 && !!el.textContent?.trim()
+      })
+      .map((el) => el.textContent!.trim().slice(0, 40)),
+  )
+  expect(clippedText).toEqual([])
+})
+
+for (const width of [320, 768]) {
+  test(`a long city name in the favourites list wraps at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await seed(page, 'favourites', [
+      { id: 'geodb:77', name: LONG_NAME, region: 'Isle of Anglesey', country: 'The United Kingdom of Great Britain and Northern Ireland', latitude: 53.2214, longitude: -4.2022 },
+      asFavourite(LONDON),
+      asFavourite(PARIS),
+    ])
+    await page.route(API_GLOB, (route) => route.fulfill({ json: forecastBody() }))
+    await page.goto('/')
+    if (width < 768) await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: /^Favourites/ }).click()
+
+    const entry = page.getByRole('region', { name: 'Favourites' }).getByText(LONG_NAME, { exact: true })
+    await expect(entry).toBeVisible()
+    expect(await entry.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true)
+    expect(await elementsOutsideViewport(page)).toEqual([])
+  })
+}
