@@ -24,7 +24,14 @@ for (const vp of VIEWPORTS) {
       const errors = trackErrors(page)
       await page.goto('/')
       await expect(page.getByRole('heading', { level: 1, name: 'No city selected' })).toBeVisible()
-      await expect(page.getByRole('region', { name: 'Favourites' })).toBeVisible()
+      if (vp.width < 768) {
+        // Phones: favourites are one tap away behind the bottom bar, not stacked under the weather.
+        await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible()
+        await expect(page.getByRole('region', { name: 'Favourites' })).toBeHidden()
+      } else {
+        await expect(page.getByRole('navigation', { name: 'Main' })).toBeHidden()
+        await expect(page.getByRole('region', { name: 'Favourites' })).toBeVisible()
+      }
 
       const { scrollWidth, clientWidth } = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,

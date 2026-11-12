@@ -40,7 +40,7 @@ for (const vp of [
       await expect(page.getByText('England, United Kingdom')).toBeVisible()
       await expect(page.getByLabel('7 degrees Celsius')).toBeVisible()
       await expect(page.getByText('Partly cloudy')).toBeVisible()
-      await expect(page.getByRole('list').getByRole('listitem')).toHaveCount(5)
+      await expect(page.locator('main').getByRole('listitem')).toHaveCount(5)
       await expect(page.getByText('Weather data by Open-Meteo.com')).toBeVisible()
 
       const { sw, cw } = await page.evaluate(() => ({
@@ -50,7 +50,7 @@ for (const vp of [
       expect(sw).toBeLessThanOrEqual(cw)
 
       // Forecast cards must not overlap each other.
-      const boxes = await page.getByRole('listitem').evaluateAll((els) =>
+      const boxes = await page.locator('main').getByRole('listitem').evaluateAll((els) =>
         els.map((el) => el.getBoundingClientRect()).map((r) => ({ x: r.x, y: r.y, w: r.width, h: r.height })),
       )
       for (let i = 0; i < boxes.length; i++) {
@@ -78,11 +78,11 @@ test.describe('forecast layout', () => {
     await mockWeather(page)
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto(LONDON_URL)
-    const desktopTops = await page.getByRole('listitem').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)))
+    const desktopTops = await page.locator('main').getByRole('listitem').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)))
     expect(new Set(desktopTops).size).toBe(1)
 
     await page.setViewportSize({ width: 375, height: 812 })
-    const mobileTops = await page.getByRole('listitem').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)))
+    const mobileTops = await page.locator('main').getByRole('listitem').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)))
     expect(new Set(mobileTops).size).toBe(5)
   })
 })
@@ -252,7 +252,7 @@ test.describe('detail cards', () => {
     await expect(card(page, 'Sunrise')).toContainText('Not available')
     await expect(card(page, 'Feels like')).toContainText('Not available')
     await expect(card(page, 'Sunset')).toContainText(/(4:15 PM|16:15)/) // unaffected
-    await expect(page.getByRole('list').getByRole('listitem')).toHaveCount(5)
+    await expect(page.locator('main').getByRole('listitem')).toHaveCount(5)
   })
 
   test('loading skeleton reserves the details space (no large layout shift)', async ({ page }) => {
